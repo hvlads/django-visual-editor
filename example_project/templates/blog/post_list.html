@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block title %}Blog Posts{% endblock %}
+
+{% block content %}
+<h2>Blog Posts</h2>
+
+{% if posts %}
+    <div style="margin-top: 30px;">
+        {% for post in posts %}
+            <article style="margin-bottom: 30px; padding-bottom: 30px; border-bottom: 1px solid #eee;">
+                <h3><a href="{% url 'post_detail' post.pk %}" style="color: #333; text-decoration: none;">{{ post.title }}</a></h3>
+                <p style="color: #666; font-size: 0.9em; margin: 10px 0;">
+                    By {{ post.author.username }} | {{ post.created_at|date:"F d, Y" }}
+                </p>
+                <div style="margin-top: 15px;">
+                    {{ post.content|truncatewords_html:50|safe }}
+                </div>
+                <a href="{% url 'post_detail' post.pk %}" class="btn" style="margin-top: 10px;">Read More</a>
+            </article>
+        {% endfor %}
+    </div>
+{% else %}
+    <p style="margin-top: 20px; color: #666;">No posts yet. <a href="{% url 'post_create' %}">Create the first one!</a></p>
+{% endif %}
+{% endblock %}

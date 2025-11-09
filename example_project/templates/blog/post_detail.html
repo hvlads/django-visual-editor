@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block content %}
+<article>
+    <h2>{{ post.title }}</h2>
+    <p style="color: #666; font-size: 0.9em; margin: 20px 0;">
+        By {{ post.author.username }} | {{ post.created_at|date:"F d, Y H:i" }}
+        {% if post.updated_at != post.created_at %}
+            (Updated: {{ post.updated_at|date:"F d, Y H:i" }})
+        {% endif %}
+    </p>
+
+    <div style="margin-top: 30px; line-height: 1.8;">
+        {{ post.content|safe }}
+    </div>
+
+    {% if user == post.author %}
+        <div style="margin-top: 30px;">
+            <a href="{% url 'post_edit' post.pk %}" class="btn">Edit Post</a>
+        </div>
+    {% endif %}
+</article>
+
+<div style="margin-top: 30px;">
+    <a href="{% url 'post_list' %}">&larr; Back to all posts</a>
+</div>
+{% endblock %}
