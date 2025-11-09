@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-visual-editor"
-version = "0.1.0"
+version = "0.1.1"
 description = "Visual text editor for Django with image upload, formatting and HTML compression"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.9"
 license = {text = "MIT"}
 authors = [
     {name = "Vladislav Khoboko", email = "vladislah@gmail.com"}
@@ -23,14 +23,17 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Internet :: WWW/HTTP",
     "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "django>=5.2.8",
-    "pillow>=11.1.0",
+    "django>=4.2",
+    "pillow>=10.0.0",
 ]
 
 [project.urls]
@@ -44,9 +47,9 @@ include-package-data = true
 
 [dependency-groups]
 dev = [
-    "black>=25.9.0",
-    "pytest>=9.0.0",
-    "pytest-django>=4.11.1",
+    "black>=24.0.0",
+    "pytest>=8.0.0",
+    "pytest-django>=4.7.0",
 ]
 
 [tool.black]
