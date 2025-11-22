@@ -23,8 +23,13 @@ export class HtmlCompressor {
 
   /**
    * Tags that should be preserved as-is (not converted to spans)
+   * Включаем семантические теги для правильного WYSIWYG
    */
-  private static readonly PRESERVE_TAGS = ['CODE', 'PRE', 'IMG', 'A'];
+  private static readonly PRESERVE_TAGS = [
+    'CODE', 'PRE', 'IMG', 'A',
+    'H1', 'H2', 'H3', 'H4', 'H5', 'H6',  // Заголовки
+    'P', 'UL', 'OL', 'LI', 'BLOCKQUOTE', 'TABLE', 'TR', 'TD', 'TH'  // Другие блочные элементы
+  ];
 
   /**
    * Compresses HTML by converting tags to inline styles

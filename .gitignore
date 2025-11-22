@@ -18,6 +18,7 @@ db.sqlite3-journal
 /media
 /staticfiles
 /test_media
+example_project/media/
 
 # Testing
 .pytest_cache/

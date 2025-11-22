@@ -1,6 +1,6 @@
 {% load static %}
-<div class="visual-editor-container" data-editor-config="{{ widget.editor_config }}">
-    <div class="visual-editor-toolbar" id="toolbar-{{ widget.attrs.id }}"></div>
-    <div class="visual-editor-content" id="editor-{{ widget.attrs.id }}" contenteditable="true"></div>
+<link rel="stylesheet" href="{% static 'django_visual_editor/css/admin.css' %}">
+<div class="visual-editor-container" data-visual-editor="true" data-editor-config="{{ widget.editor_config }}">
+    <div class="visual-editor-content" id="editor-{{ widget.attrs.id }}"></div>
     <textarea {{ widget.attrs|safe }} name="{{ widget.name }}" style="display: none;">{{ widget.value|default:"" }}</textarea>
 </div>

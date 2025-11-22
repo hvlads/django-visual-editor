@@ -1,9 +1,9 @@
-import { VisualEditor } from './editor/visual-editor';
+import { BlockEditor } from './editor/block-editor';
 import { EditorConfig } from './types';
-import './styles/editor.css';
+import './styles/blocks.css';
 
 /**
- * Initialize all visual editors on the page
+ * Initialize all block editors on the page
  */
 function initializeEditors(): void {
   const containers = document.querySelectorAll('.visual-editor-container');
@@ -14,12 +14,16 @@ function initializeEditors(): void {
 
     const config: EditorConfig = JSON.parse(configData);
 
+    // Set global upload URL from config
+    if (config.uploadUrl) {
+      (window as any).DJANGO_VISUAL_EDITOR_UPLOAD_URL = config.uploadUrl;
+    }
+
     // Find elements
     const editorElement = container.querySelector('.visual-editor-content') as HTMLElement;
     const textareaElement = container.querySelector('textarea') as HTMLTextAreaElement;
-    const toolbarElement = container.querySelector('.visual-editor-toolbar') as HTMLElement;
 
-    if (!editorElement || !textareaElement || !toolbarElement) {
+    if (!editorElement || !textareaElement) {
       console.error('Missing required editor elements');
       return;
     }
@@ -31,16 +35,12 @@ function initializeEditors(): void {
     if (!textareaElement.id) {
       textareaElement.id = `textarea-${Math.random().toString(36).substr(2, 9)}`;
     }
-    if (!toolbarElement.id) {
-      toolbarElement.id = `toolbar-${Math.random().toString(36).substr(2, 9)}`;
-    }
 
-    // Initialize editor
+    // Initialize block editor (toolbar is now contextual and created automatically)
     try {
-      new VisualEditor(
+      new BlockEditor(
         editorElement.id,
         textareaElement.id,
-        toolbarElement.id,
         config
       );
     } catch (error) {
@@ -57,4 +57,4 @@ if (document.readyState === 'loading') {
 }
 
 // Export for manual initialization if needed
-export { VisualEditor, EditorConfig };
+export { BlockEditor, EditorConfig };
