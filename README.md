@@ -1,30 +1,35 @@
 # Django Visual Editor
 
-A visual text editor for Django with image upload support, text formatting, and HTML compression.
+A modern block-based visual editor for Django with inline styles support. No external CSS required - all styles are embedded directly in HTML.
 
 ## Features
 
-- **Visual Editing**: Intuitive WYSIWYG editor
-- **Text Formatting**:
-  - Bold, Italic, Underline, Strikethrough
-  - Font family selection (Arial, Times New Roman, Georgia, Courier New, etc.)
-  - Font size selection (10px - 24px)
-  - Clear formatting
-- **Headings**: H1, H2, H3
-- **Lists**: Numbered and bulleted lists
-- **Code**:
-  - Inline code (`<code>` tag) with toggle support
-  - Code blocks (pre+code) for multi-line code
-- **Images**: Upload via drag-and-drop, paste, or file picker
-  - Resize images by dragging or using preset sizes (S, M, L, XL)
-  - Align images (left, center, right)
-  - Delete images
-- **Links**: Create hyperlinks
-- **Undo/Redo**: Full history support (Ctrl+Z, Ctrl+Y)
-- **HTML Source Mode**: Toggle between visual and HTML code editing
-- **HTML Compression**: Automatic conversion to compact HTML with inline styles
-- **Keyboard Shortcuts**: Ctrl+B (Bold), Ctrl+I (Italic), Ctrl+U (Underline), Ctrl+Z (Undo), Ctrl+Y (Redo)
-- **Auto Cleanup**: Command to remove unused images
+### Block-Based Architecture
+- **6 Block Types**: Paragraph, Heading (H1-H6), List (ordered/unordered), Code, Quote, Image
+- **Contextual Toolbar**: Appears when a block is selected, showing relevant formatting options
+- **Add/Remove Blocks**: Easy block management with visual controls
+- **Block Menu**: Quick access to all block types
+
+### Inline Styles (No CSS Required!)
+- **Text Alignment**: Left, center, right, justify
+- **Text Size**: 5 preset sizes (14px - 24px)
+- **Text Color**: 5 preset colors (gray, blue, green, red, yellow)
+- **Text Formatting**: Bold, italic, underline
+- **Universal Compatibility**: Styles work everywhere without additional CSS files
+
+### Image Support
+- **Upload**: Drag-and-drop or file picker
+- **Resize**: Drag the edge to resize images
+- **Replace**: Double-click image to change it
+- **Alignment**: Left, center, right alignment support
+- **Metadata Storage**: Image URL and width stored in block data
+
+### Developer-Friendly
+- **TypeScript**: Full TypeScript implementation with type safety
+- **Block API**: Easy to extend with custom block types
+- **HTML Export**: Clean HTML with inline styles
+- **HTML Import**: Parse existing HTML with styles extraction
+- **Auto Cleanup**: Management command to remove unused images
 
 ## Installation
 
@@ -251,6 +256,7 @@ django-visual-editor/
 ├── django_visual_editor/       # Django application
 │   ├── models.py              # Model for uploaded images
 │   ├── widgets.py             # Django widget
+│   ├── fields.py              # Custom model field
 │   ├── views.py               # View for image upload
 │   ├── urls.py                # URL configuration
 │   ├── management/            # Management commands
@@ -258,9 +264,9 @@ django-visual-editor/
 │   └── templates/             # Templates
 ├── frontend/                  # TypeScript sources
 │   ├── src/
-│   │   ├── editor/           # Main editor
+│   │   ├── blocks/           # Block types (paragraph, heading, list, code, quote, image)
+│   │   ├── editor/           # Block editor, contextual toolbar, block menu
 │   │   ├── utils/            # Utils (upload, compression)
-│   │   ├── types/            # TypeScript types
 │   │   └── styles/           # CSS styles
 │   ├── package.json
 │   ├── tsconfig.json
@@ -271,10 +277,10 @@ django-visual-editor/
 
 ## Technologies
 
-- **Backend**: Django 5.2+
+- **Backend**: Django 4.2+
 - **Frontend**: TypeScript, Webpack
-- **Editor**: Custom implementation using ContentEditable API
-- **Styles**: Vanilla CSS
+- **Architecture**: Block-based editor with inline styles
+- **Styles**: No external CSS required (inline styles)
 
 ## License
 
