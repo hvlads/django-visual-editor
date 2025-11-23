@@ -16,7 +16,8 @@ export class ImageBlock extends BaseBlock {
     const content = typeof this.data.content === 'string' ? this.data.content : '';
 
     // If we have a URL stored in content, use it
-    if (content && content.startsWith('http')) {
+    // Accept both absolute URLs (http/https) and relative URLs (/media/...)
+    if (content && (content.startsWith('http') || content.startsWith('/'))) {
       this.imageUrl = content;
     }
 
@@ -192,6 +193,10 @@ export class ImageBlock extends BaseBlock {
       this.contentElement.innerHTML = '<div class="loading">Uploading... ⏳</div>';
     }
 
+    // Dispatch upload start event
+    const uploadStartEvent = new CustomEvent('uploadStart', { bubbles: true });
+    this.element.dispatchEvent(uploadStartEvent);
+
     try {
       // Create form data
       const formData = new FormData();
@@ -226,6 +231,10 @@ export class ImageBlock extends BaseBlock {
       } else {
         throw new Error(result.error || 'Upload failed');
       }
+
+      // Dispatch upload complete event (success)
+      const uploadCompleteEvent = new CustomEvent('uploadComplete', { bubbles: true });
+      this.element.dispatchEvent(uploadCompleteEvent);
     } catch (error) {
       console.error('Image upload error:', error);
       console.error('Upload URL used:', this.getUploadUrl());
@@ -236,6 +245,10 @@ export class ImageBlock extends BaseBlock {
         this.contentElement.innerHTML = this.renderContent();
         this.setupContentEditing();
       }
+
+      // Dispatch upload complete event (failure)
+      const uploadCompleteEvent = new CustomEvent('uploadComplete', { bubbles: true });
+      this.element.dispatchEvent(uploadCompleteEvent);
     }
   }
 

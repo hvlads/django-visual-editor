@@ -17,6 +17,7 @@ export class BlockEditor {
   private contextualToolbar: ContextualToolbar;
   private blockMenu: BlockMenu;
   private addBlockButton: HTMLElement;
+  private pendingUploads: number = 0;
 
   constructor(
     editorId: string,
@@ -110,6 +111,21 @@ export class BlockEditor {
       }
     }) as EventListener);
 
+    // Delete block event
+    this.editorElement.addEventListener('deleteBlock', ((e: CustomEvent) => {
+      const block = e.detail.block as BaseBlock;
+      this.removeBlock(block);
+    }) as EventListener);
+
+    // Image upload events
+    this.editorElement.addEventListener('uploadStart', (() => {
+      this.trackUploadStart();
+    }) as EventListener);
+
+    this.editorElement.addEventListener('uploadComplete', (() => {
+      this.trackUploadComplete();
+    }) as EventListener);
+
     // Click outside to deselect
     document.addEventListener('click', (e) => {
       const target = e.target as Node;
@@ -186,7 +202,7 @@ export class BlockEditor {
     const index = this.blocks.indexOf(block);
     if (index > -1) {
       this.blocks.splice(index, 1);
-      block.delete();
+      block.getElement().remove();
       this.updateTextarea();
 
       // Focus previous or next block
@@ -441,5 +457,70 @@ export class BlockEditor {
    */
   getBlocks(): BaseBlock[] {
     return this.blocks;
+  }
+
+  /**
+   * Track upload start
+   */
+  trackUploadStart(): void {
+    this.pendingUploads++;
+    this.updateFormWarning();
+  }
+
+  /**
+   * Track upload complete
+   */
+  trackUploadComplete(): void {
+    this.pendingUploads--;
+    if (this.pendingUploads < 0) this.pendingUploads = 0;
+    this.updateFormWarning();
+  }
+
+  /**
+   * Update form warning based on pending uploads
+   */
+  private updateFormWarning(): void {
+    const form = this.textareaElement.closest('form');
+    if (!form) return;
+
+    let warningEl = form.querySelector('.upload-warning') as HTMLElement;
+
+    if (this.pendingUploads > 0) {
+      if (!warningEl) {
+        warningEl = document.createElement('div');
+        warningEl.className = 'upload-warning';
+        warningEl.style.cssText = `
+          background: #fff3cd;
+          border: 2px solid #ffc107;
+          color: #856404;
+          padding: 12px;
+          margin: 10px 0;
+          border-radius: 4px;
+          font-weight: bold;
+        `;
+
+        // Insert at top of form
+        form.insertBefore(warningEl, form.firstChild);
+      }
+
+      warningEl.textContent = `⏳ Uploading ${this.pendingUploads} image(s)... Please wait before saving!`;
+      warningEl.style.display = 'block';
+
+      // Disable submit buttons
+      const submitButtons = form.querySelectorAll('input[type="submit"], button[type="submit"]');
+      submitButtons.forEach(btn => {
+        (btn as HTMLButtonElement | HTMLInputElement).disabled = true;
+      });
+    } else {
+      if (warningEl) {
+        warningEl.style.display = 'none';
+      }
+
+      // Enable submit buttons
+      const submitButtons = form.querySelectorAll('input[type="submit"], button[type="submit"]');
+      submitButtons.forEach(btn => {
+        (btn as HTMLButtonElement | HTMLInputElement).disabled = false;
+      });
+    }
   }
 }

@@ -161,8 +161,12 @@ export abstract class BaseBlock {
    * Delete this block
    */
   delete(): void {
-    this.element.remove();
-    this.triggerChange();
+    // Dispatch delete event for editor to handle
+    const event = new CustomEvent('deleteBlock', {
+      detail: { block: this },
+      bubbles: true
+    });
+    this.element.dispatchEvent(event);
   }
 
   /**
