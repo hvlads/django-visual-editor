@@ -6,6 +6,7 @@ import { BlockType } from '../blocks/types';
 export class BlockMenu {
   private element: HTMLElement;
   private onSelectCallback?: (type: BlockType) => void;
+  private onPasteCallback?: () => void;
 
   constructor() {
     this.element = this.createMenu();
@@ -69,6 +70,14 @@ export class BlockMenu {
             <div class="item-desc">Upload or embed an image</div>
           </div>
         </button>
+        <hr class="block-menu-divider" />
+        <button type="button" class="block-menu-item" data-action="paste">
+          <span class="item-icon">📋</span>
+          <div class="item-info">
+            <div class="item-name">Paste HTML/Text</div>
+            <div class="item-desc">Insert HTML or text from clipboard</div>
+          </div>
+        </button>
       </div>
     `;
 
@@ -89,7 +98,18 @@ export class BlockMenu {
     const items = this.element.querySelectorAll('.block-menu-item');
     items.forEach(item => {
       item.addEventListener('click', (e) => {
-        const type = (e.currentTarget as HTMLElement).dataset.type as BlockType;
+        const element = e.currentTarget as HTMLElement;
+        const action = element.dataset.action;
+        const type = element.dataset.type as BlockType;
+
+        // Handle special actions like paste
+        if (action === 'paste' && this.onPasteCallback) {
+          this.onPasteCallback();
+          this.hide();
+          return;
+        }
+
+        // Handle normal block type selection
         if (type && this.onSelectCallback) {
           this.onSelectCallback(type);
           this.hide();
@@ -131,5 +151,12 @@ export class BlockMenu {
    */
   onSelect(callback: (type: BlockType) => void): void {
     this.onSelectCallback = callback;
+  }
+
+  /**
+   * Set callback for paste action
+   */
+  onPaste(callback: () => void): void {
+    this.onPasteCallback = callback;
   }
 }

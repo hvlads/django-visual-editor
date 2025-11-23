@@ -4,6 +4,8 @@ import { BlockData, BlockType } from '../blocks/types';
 import { EditorConfig } from '../types';
 import { ContextualToolbar } from './contextual-toolbar';
 import { BlockMenu } from './block-menu';
+import { PasteModal } from './paste-modal';
+import { HTMLEditor } from './html-editor';
 
 /**
  * Main Block Editor
@@ -18,6 +20,11 @@ export class BlockEditor {
   private blockMenu: BlockMenu;
   private addBlockButton: HTMLElement;
   private pendingUploads: number = 0;
+  private pasteModal: PasteModal | null = null;
+  private htmlEditor: HTMLEditor | null = null;
+  private htmlEditorContainer: HTMLElement | null = null;
+  private modeSwitchButton: HTMLElement;
+  private isHTMLMode: boolean = false;
 
   constructor(
     editorId: string,
@@ -43,9 +50,15 @@ export class BlockEditor {
     this.blockMenu.onSelect((type) => {
       this.addBlock(type);
     });
+    this.blockMenu.onPaste(() => {
+      this.showPasteModal();
+    });
 
     // Create add block button
     this.addBlockButton = this.createAddBlockButton();
+
+    // Create mode switch button
+    this.modeSwitchButton = this.createModeSwitchButton();
 
     this.init();
   }
@@ -58,10 +71,21 @@ export class BlockEditor {
     this.editorElement.className = 'block-editor';
     this.editorElement.innerHTML = '';
 
-    // Add the "Add Block" button at the top
+    // Add the "Add Block" button and mode switch button at the top
     const container = this.editorElement.parentElement;
     if (container) {
-      container.insertBefore(this.addBlockButton, this.editorElement);
+      // Create toolbar for buttons
+      const toolbar = document.createElement('div');
+      toolbar.className = 'editor-toolbar';
+      toolbar.appendChild(this.addBlockButton);
+      toolbar.appendChild(this.modeSwitchButton);
+      container.insertBefore(toolbar, this.editorElement);
+
+      // Create HTML editor container
+      this.htmlEditorContainer = document.createElement('div');
+      this.htmlEditorContainer.className = 'html-editor-container';
+      this.htmlEditorContainer.style.display = 'none';
+      container.insertBefore(this.htmlEditorContainer, this.editorElement.nextSibling);
     }
 
     // Load initial content or create empty paragraph
@@ -87,7 +111,7 @@ export class BlockEditor {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'add-block-btn';
-    button.innerHTML = '➕ Add Block';
+    button.innerHTML = '<span class="btn-icon">+</span> Add Block';
 
     button.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -96,6 +120,193 @@ export class BlockEditor {
     });
 
     return button;
+  }
+
+  /**
+   * Create the mode switch button
+   */
+  private createModeSwitchButton(): HTMLElement {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'mode-switch-btn';
+    button.innerHTML = '&lt;/&gt; HTML Mode';
+
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleHTMLMode();
+    });
+
+    return button;
+  }
+
+  /**
+   * Show paste modal
+   */
+  private showPasteModal(): void {
+    if (!this.pasteModal) {
+      this.pasteModal = new PasteModal((content) => {
+        this.insertContent(content);
+      });
+    }
+    this.pasteModal.open();
+  }
+
+  /**
+   * Insert content from paste modal with auto-detection
+   */
+  private insertContent(content: string): void {
+    // Auto-detect if content is HTML or plain text
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = content.trim();
+    const elements = Array.from(tempDiv.children);
+
+    if (elements.length > 0) {
+      // Has HTML elements - insert as HTML
+      this.insertHTMLBlocks(content);
+    } else {
+      // Plain text - insert as text blocks
+      this.insertTextBlocks(content);
+    }
+  }
+
+  /**
+   * Insert HTML as blocks
+   */
+  private insertHTMLBlocks(html: string): void {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    const elements = Array.from(tempDiv.children);
+
+    if (elements.length === 0) return;
+
+    // Find index to insert after selected block
+    let insertIndex = this.blocks.length;
+    if (this.selectedBlock) {
+      insertIndex = this.blocks.indexOf(this.selectedBlock) + 1;
+    }
+
+    elements.forEach((el, i) => {
+      const blockData = this.htmlElementToBlockData(el);
+      if (blockData) {
+        const block = BlockFactory.createBlock(blockData);
+        block.onChange(() => this.updateTextarea());
+        block.onSelect((selectedBlock) => {
+          this.selectedBlock = selectedBlock;
+          this.contextualToolbar.show(selectedBlock);
+          this.notifyBlockSelected(selectedBlock);
+        });
+
+        // Add to blocks array at specific index
+        this.blocks.splice(insertIndex + i, 0, block);
+
+        // Add to DOM at specific position
+        if (insertIndex + i < this.editorElement.children.length) {
+          this.editorElement.insertBefore(block.getElement(), this.editorElement.children[insertIndex + i]);
+        } else {
+          this.editorElement.appendChild(block.getElement());
+        }
+      }
+    });
+
+    this.updateTextarea();
+  }
+
+  /**
+   * Insert plain text as separate paragraph blocks
+   */
+  private insertTextBlocks(text: string): void {
+    const lines = text.split('\n').filter(line => line.trim() !== '');
+
+    if (lines.length === 0) return;
+
+    // Find index to insert after selected block
+    let insertIndex = this.blocks.length;
+    if (this.selectedBlock) {
+      insertIndex = this.blocks.indexOf(this.selectedBlock) + 1;
+    }
+
+    lines.forEach((line, i) => {
+      this.addBlock('paragraph', insertIndex + i, line.trim());
+    });
+
+    // Update textarea to save the changes
+    this.updateTextarea();
+  }
+
+  /**
+   * Toggle between Visual and HTML mode
+   */
+  private toggleHTMLMode(): void {
+    if (this.isHTMLMode) {
+      this.switchToVisualMode();
+    } else {
+      this.switchToHTMLMode();
+    }
+  }
+
+  /**
+   * Switch to HTML editing mode
+   */
+  private async switchToHTMLMode(): Promise<void> {
+    if (!this.htmlEditorContainer) return;
+
+    // Get current HTML from blocks
+    const html = this.toHTML();
+
+    // Hide visual editor
+    this.editorElement.style.display = 'none';
+    this.contextualToolbar.hide();
+
+    // Create and show HTML editor
+    if (!this.htmlEditor) {
+      this.htmlEditor = new HTMLEditor(
+        this.htmlEditorContainer,
+        html,
+        (updatedHTML) => {
+          this.updateTextarea();
+        }
+      );
+    } else {
+      await this.htmlEditor.setValue(html);
+    }
+
+    this.htmlEditorContainer.style.display = 'block';
+    this.htmlEditor.show();
+
+    // Update button
+    this.modeSwitchButton.innerHTML = '👁️ Visual Mode';
+    this.modeSwitchButton.classList.add('active');
+
+    this.isHTMLMode = true;
+  }
+
+  /**
+   * Switch to Visual editing mode
+   */
+  private switchToVisualMode(): void {
+    if (!this.htmlEditor || !this.htmlEditorContainer) return;
+
+    // Get HTML from HTML editor
+    const html = this.htmlEditor.getValue();
+
+    // Hide HTML editor
+    this.htmlEditorContainer.style.display = 'none';
+    this.htmlEditor.hide();
+
+    // Clear and reload visual editor
+    this.editorElement.innerHTML = '';
+    this.blocks = [];
+    this.loadFromHTML(html);
+
+    // Show visual editor
+    this.editorElement.style.display = 'block';
+
+    // Update button
+    this.modeSwitchButton.innerHTML = '&lt;/&gt; HTML Mode';
+    this.modeSwitchButton.classList.remove('active');
+
+    this.isHTMLMode = false;
+    this.updateTextarea();
   }
 
   /**
@@ -263,17 +474,41 @@ export class BlockEditor {
    */
   private loadFromHTML(html: string): void {
     // Simple HTML parsing - convert to blocks
-    // This is a basic implementation, can be improved
     const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
+    tempDiv.innerHTML = html.trim();
 
     const elements = Array.from(tempDiv.children);
 
+    // Check if there's only text content (no HTML elements)
     if (elements.length === 0) {
+      const textContent = tempDiv.textContent?.trim() || '';
+
+      if (textContent) {
+        // It's plain text - split by lines and create paragraph blocks
+        const lines = textContent.split('\n').filter(line => line.trim() !== '');
+        if (lines.length > 0) {
+          lines.forEach(line => {
+            const blockData = BlockFactory.createBlockData('paragraph', line.trim());
+            const block = BlockFactory.createBlock(blockData);
+            block.onChange(() => this.updateTextarea());
+            block.onSelect((selectedBlock) => {
+              this.selectedBlock = selectedBlock;
+              this.contextualToolbar.show(selectedBlock);
+              this.notifyBlockSelected(selectedBlock);
+            });
+            this.blocks.push(block);
+            this.editorElement.appendChild(block.getElement());
+          });
+          return;
+        }
+      }
+
+      // No content at all - create empty paragraph
       this.addBlock('paragraph');
       return;
     }
 
+    // Has HTML elements - parse them
     elements.forEach(el => {
       const blockData = this.htmlElementToBlockData(el);
       if (blockData) {

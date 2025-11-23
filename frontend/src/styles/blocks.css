@@ -406,28 +406,54 @@
   color: #374151;
 }
 /* ==== ADD BLOCK BUTTON ==== */
-.add-block-btn {
-  width: 100%;
-  padding: 12px 20px;
-  margin-bottom: 16px;
+/* Unified toolbar button styles */
+.add-block-btn,
+.mode-switch-btn {
+  padding: 10px 20px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
   border-radius: 8px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: auto !important; /* Force auto width, override any inherited styles */
+  max-width: none !important;
 }
 
-.add-block-btn:hover {
+.add-block-btn:hover,
+.mode-switch-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  background: linear-gradient(135deg, #7c8ef6 0%, #8b5fc7 100%);
 }
 
-.add-block-btn:active {
+.add-block-btn:active,
+.mode-switch-btn:active {
   transform: translateY(0);
+}
+
+.mode-switch-btn.active {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.mode-switch-btn.active:hover {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+/* Button icon styles */
+.btn-icon {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  color: white;
 }
 
 /* ==== CONTEXTUAL TOOLBAR ==== */
@@ -754,12 +780,7 @@
 }
 
 /* Make add block button full width */
-.django-admin .add-block-btn,
-.form-row .add-block-btn {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-}
+/* Toolbar buttons should not be full width */
 
 /* Adjust contextual toolbar position for admin */
 .django-admin .contextual-toolbar {
@@ -799,4 +820,230 @@
 .django-admin .block-content .text-red-600 {
   background: none !important;
   background-color: transparent !important;
+}
+
+/* ==== Editor Toolbar ==== */
+.editor-toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Mode Switch Button - styles defined above with add-block-btn */
+
+/* ==== Paste Modal ==== */
+.paste-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 9998;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.paste-modal-overlay-visible {
+  opacity: 1;
+}
+
+.paste-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  width: 90%;
+  max-width: 700px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.paste-modal-visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.paste-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.paste-modal-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.paste-modal-close {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.paste-modal-close:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.paste-modal-body {
+  padding: 24px;
+}
+
+.paste-modal-textarea {
+  width: 100%;
+  min-height: 300px;
+  padding: 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.paste-modal-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.paste-modal-hint {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+  color: #0369a1;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.paste-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.paste-modal-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.paste-modal-btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.paste-modal-btn-secondary:hover {
+  background: #e5e7eb;
+}
+
+.paste-modal-btn-primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.paste-modal-btn-primary:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* ==== HTML Editor Container ==== */
+.html-editor-container {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  height: 600px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #282c34;
+  position: relative;
+}
+
+.html-editor-container .cm-editor {
+  height: 100%;
+}
+
+/* HTML Editor Toolbar */
+.html-editor-toolbar {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  background: #1e222a;
+  border-bottom: 1px solid #3e4451;
+  align-items: center;
+}
+
+.html-format-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+}
+
+.html-format-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+}
+
+.html-format-btn:active {
+  transform: translateY(0);
+}
+
+/* HTML Editor Wrapper */
+.html-editor-wrapper {
+  height: calc(100% - 49px);
+  overflow: auto;
+}
+
+/* ==== Block Menu Divider ==== */
+.block-menu-divider {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 8px 0;
 }
