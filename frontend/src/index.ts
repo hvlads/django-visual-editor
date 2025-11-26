@@ -1,6 +1,7 @@
 import { BlockEditor } from './editor/block-editor';
 import { EditorConfig } from './types';
 import './styles/blocks.css';
+import './styles/ai-assistant.css';
 
 /**
  * Initialize all block editors on the page
@@ -13,6 +14,16 @@ function initializeEditors(): void {
     if (!configData) return;
 
     const config: EditorConfig = JSON.parse(configData);
+
+    // Parse AI config if present
+    const aiConfigData = container.getAttribute('data-ai-config');
+    if (aiConfigData && aiConfigData !== 'null') {
+      try {
+        config.ai = JSON.parse(aiConfigData);
+      } catch (error) {
+        console.warn('Failed to parse AI config:', error);
+      }
+    }
 
     // Set global upload URL from config
     if (config.uploadUrl) {

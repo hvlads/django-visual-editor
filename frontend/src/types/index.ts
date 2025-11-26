@@ -3,6 +3,16 @@ export interface EditorConfig {
   minHeight?: number;
   maxHeight?: number;
   placeholder?: string;
+  ai?: {
+    enabled: boolean;
+    endpoint: string;
+    models: Array<{
+      id: string;
+      name: string;
+      provider: string;
+    }>;
+    defaultModel: string;
+  };
 }
 
 export interface ToolbarButton {

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-visual-editor"
-version = "0.3.0"
+version = "0.4.0"
 description = "Block-based visual editor for Django with inline styles, image support and rich formatting"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -36,6 +36,11 @@ dependencies = [
     "pillow>=10.0.0",
 ]
 
+[project.optional-dependencies]
+ai = [
+    "openai>=1.0.0",
+]
+
 [project.urls]
 Homepage = "https://github.com/hvlads/django-visual-editor"
 Repository = "https://github.com/hvlads/django-visual-editor"
@@ -50,6 +55,7 @@ dev = [
     "black>=24.0.0",
     "pytest>=8.0.0",
     "pytest-django>=4.7.0",
+    "ipython>=8.18.1",
 ]
 
 [tool.black]

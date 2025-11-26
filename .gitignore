@@ -20,6 +20,10 @@ db.sqlite3-journal
 /test_media
 example_project/media/
 
+# Environment variables (contains API keys)
+.env
+example_project/.env
+
 # Testing
 .pytest_cache/
 .coverage

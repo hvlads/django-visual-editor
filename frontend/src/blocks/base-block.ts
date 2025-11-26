@@ -38,6 +38,7 @@ export abstract class BaseBlock {
         <!-- Actions panel -->
         <div class="block-actions">
           <button class="block-drag-handle" title="Drag to move" type="button">⋮⋮</button>
+          <button class="block-ai-context" title="Add to AI context" type="button">🤖</button>
           <button class="block-add" title="Add block below" type="button">+</button>
           <button class="block-delete" title="Delete block" type="button">×</button>
         </div>
@@ -80,6 +81,13 @@ export abstract class BaseBlock {
     deleteBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.delete();
+    });
+
+    // AI context button
+    const aiBtn = this.element.querySelector('.block-ai-context');
+    aiBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.triggerAddToAIContext();
     });
 
     // Add button
@@ -362,6 +370,17 @@ export abstract class BaseBlock {
   protected triggerAddBlock(): void {
     const event = new CustomEvent('addBlock', {
       detail: { afterBlock: this },
+      bubbles: true
+    });
+    this.element.dispatchEvent(event);
+  }
+
+  /**
+   * Trigger add to AI context event
+   */
+  protected triggerAddToAIContext(): void {
+    const event = new CustomEvent('addToAIContext', {
+      detail: { block: this },
       bubbles: true
     });
     this.element.dispatchEvent(event);

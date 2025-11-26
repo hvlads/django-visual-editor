@@ -36,4 +36,23 @@ class VisualEditorWidget(forms.Textarea):
         }
 
         context["widget"]["editor_config"] = json.dumps(editor_config)
+
+        # Add AI configuration if enabled
+        ai_config = getattr(settings, "VISUAL_EDITOR_AI_CONFIG", {})
+        if ai_config.get("enabled", False):
+            ai_frontend_config = {
+                "enabled": True,
+                "endpoint": reverse("django_visual_editor:ai_assist"),
+                "models": ai_config.get(
+                    "models",
+                    [
+                        {"id": "gpt-4o", "name": "GPT-4o", "provider": "OpenAI"},
+                    ],
+                ),
+                "defaultModel": ai_config.get("default_model", "gpt-4o"),
+            }
+            context["widget"]["ai_config"] = json.dumps(ai_frontend_config)
+        else:
+            context["widget"]["ai_config"] = "null"
+
         return context

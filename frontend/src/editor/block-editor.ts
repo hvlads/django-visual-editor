@@ -6,6 +6,7 @@ import { ContextualToolbar } from './contextual-toolbar';
 import { BlockMenu } from './block-menu';
 import { PasteModal } from './paste-modal';
 import { HTMLEditor } from './html-editor';
+import { AIAssistantPanel, AIConfig } from './ai-assistant-panel';
 
 /**
  * Main Block Editor
@@ -25,6 +26,7 @@ export class BlockEditor {
   private htmlEditorContainer: HTMLElement | null = null;
   private modeSwitchButton: HTMLElement;
   private isHTMLMode: boolean = false;
+  private aiPanel: AIAssistantPanel | null = null;
 
   constructor(
     editorId: string,
@@ -86,6 +88,35 @@ export class BlockEditor {
       this.htmlEditorContainer.className = 'html-editor-container';
       this.htmlEditorContainer.style.display = 'none';
       container.insertBefore(this.htmlEditorContainer, this.editorElement.nextSibling);
+
+      // Initialize AI panel if enabled
+      if (this.config.ai?.enabled) {
+        // Create layout wrapper for editor + AI sidebar
+        const wrapper = document.createElement('div');
+        wrapper.className = 'editor-with-ai-layout';
+
+        const mainArea = document.createElement('div');
+        mainArea.className = 'editor-main-area';
+
+        const aiSidebar = document.createElement('div');
+        aiSidebar.className = 'editor-ai-sidebar';
+
+        // Move existing editor into main area
+        const editorParent = this.editorElement.parentElement!;
+        editorParent.insertBefore(wrapper, this.editorElement);
+        wrapper.appendChild(mainArea);
+        wrapper.appendChild(aiSidebar);
+        mainArea.appendChild(this.editorElement);
+
+        // Also move HTML editor container into main area
+        if (this.htmlEditorContainer) {
+          mainArea.appendChild(this.htmlEditorContainer);
+        }
+
+        // Create AI panel
+        this.aiPanel = new AIAssistantPanel(this, this.config.ai);
+        aiSidebar.appendChild(this.aiPanel.getElement());
+      }
     }
 
     // Load initial content or create empty paragraph
@@ -326,6 +357,14 @@ export class BlockEditor {
     this.editorElement.addEventListener('deleteBlock', ((e: CustomEvent) => {
       const block = e.detail.block as BaseBlock;
       this.removeBlock(block);
+    }) as EventListener);
+
+    // Add to AI context event
+    this.editorElement.addEventListener('addToAIContext', ((e: CustomEvent) => {
+      const block = e.detail.block as BaseBlock;
+      if (this.aiPanel) {
+        this.aiPanel.addBlockToContext(block);
+      }
     }) as EventListener);
 
     // Image upload events
@@ -757,5 +796,167 @@ export class BlockEditor {
         (btn as HTMLButtonElement | HTMLInputElement).disabled = false;
       });
     }
+  }
+
+  /**
+   * Insert AI-generated content as new blocks
+   * Called from AI panel when generating new content
+   */
+  insertAIContent(html: string): void {
+    // Parse HTML into blocks
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const elements = Array.from(doc.body.children);
+
+    if (elements.length === 0) {
+      console.warn('No content to insert from AI');
+      return;
+    }
+
+    // Determine insertion point
+    let insertIndex = this.blocks.length;
+    if (this.selectedBlock) {
+      insertIndex = this.blocks.indexOf(this.selectedBlock) + 1;
+    }
+
+    // Parse each element and create blocks
+    elements.forEach((element, i) => {
+      const blockData = this.parseHTMLElement(element as HTMLElement);
+      if (blockData) {
+        this.addBlock(blockData.type, insertIndex + i, blockData.content);
+      }
+    });
+
+    // Scroll to first inserted block
+    if (this.blocks[insertIndex]) {
+      this.blocks[insertIndex].getElement().scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // Update textarea
+    this.updateTextarea();
+  }
+
+  /**
+   * Replace selected blocks with AI-edited content
+   * Called from AI panel when editing existing content
+   */
+  replaceBlocksWithAI(html: string, oldBlocks: BaseBlock[]): void {
+    if (oldBlocks.length === 0) {
+      console.warn('No blocks to replace');
+      return;
+    }
+
+    // Parse HTML into blocks
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const elements = Array.from(doc.body.children);
+
+    if (elements.length === 0) {
+      console.warn('No content from AI to replace with');
+      return;
+    }
+
+    // Find index of first old block
+    const firstIndex = this.blocks.indexOf(oldBlocks[0]);
+    if (firstIndex === -1) {
+      console.warn('Old blocks not found in editor');
+      return;
+    }
+
+    // Remove old blocks
+    oldBlocks.forEach(block => {
+      this.removeBlock(block);
+    });
+
+    // Insert new blocks at the same position
+    elements.forEach((element, i) => {
+      const blockData = this.parseHTMLElement(element as HTMLElement);
+      if (blockData) {
+        this.addBlock(blockData.type, firstIndex + i, blockData.content);
+      }
+    });
+
+    // Scroll to first replaced block
+    if (this.blocks[firstIndex]) {
+      this.blocks[firstIndex].getElement().scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // Update textarea
+    this.updateTextarea();
+  }
+
+  /**
+   * Parse HTML element into BlockData
+   * Helper for AI content insertion
+   */
+  private parseHTMLElement(element: HTMLElement): BlockData | null {
+    const tagName = element.tagName.toLowerCase();
+    let type: BlockType | null = null;
+    let content: string | string[] = '';
+    const metadata: any = {};
+
+    switch (tagName) {
+      case 'h1':
+      case 'h2':
+      case 'h3':
+      case 'h4':
+      case 'h5':
+      case 'h6':
+        type = 'heading';
+        content = element.textContent || '';
+        metadata.level = parseInt(tagName[1]);
+        break;
+
+      case 'p':
+        type = 'paragraph';
+        content = element.textContent || '';
+        break;
+
+      case 'ul':
+      case 'ol':
+        type = 'list';
+        content = Array.from(element.querySelectorAll('li')).map(li => li.textContent || '');
+        metadata.ordered = tagName === 'ol';
+        break;
+
+      case 'blockquote':
+        type = 'quote';
+        content = element.textContent || '';
+        break;
+
+      case 'pre':
+        type = 'code';
+        const codeEl = element.querySelector('code');
+        content = codeEl ? codeEl.textContent || '' : element.textContent || '';
+        const langClass = codeEl?.className.match(/language-(\w+)/);
+        if (langClass) {
+          metadata.language = langClass[1];
+        }
+        break;
+
+      case 'img':
+        type = 'image';
+        content = element.getAttribute('src') || '';
+        break;
+
+      default:
+        // If unknown tag but has text, treat as paragraph
+        if (element.textContent && element.textContent.trim()) {
+          type = 'paragraph';
+          content = element.textContent;
+        }
+    }
+
+    if (!type) {
+      return null;
+    }
+
+    return {
+      id: `block-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      type,
+      content,
+      styles: [],
+      metadata
+    };
   }
 }

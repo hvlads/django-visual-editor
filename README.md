@@ -24,6 +24,14 @@ A modern block-based visual editor for Django with inline styles support. No ext
 - **Alignment**: Left, center, right alignment support
 - **Metadata Storage**: Image URL and width stored in block data
 
+### AI Assistant (Optional)
+- **Content Generation**: Create new content from AI prompts
+- **Content Editing**: Improve existing blocks with AI assistance
+- **Context-Aware**: Add blocks to context for better AI understanding
+- **Multi-Provider Support**: Works with OpenAI, Yandex GPT, and any OpenAI-compatible API
+- **Flexible Configuration**: Each model has its own API credentials and settings
+- **Model Switching**: Change between different AI models directly in the UI
+
 ### Developer-Friendly
 - **TypeScript**: Full TypeScript implementation with type safety
 - **Block API**: Easy to extend with custom block types
@@ -33,31 +41,40 @@ A modern block-based visual editor for Django with inline styles support. No ext
 
 ## Installation
 
-### 1. Install Dependencies
+### Quick Start (PyPI)
 
 ```bash
-# Install Python dependencies
-pip install django Pillow
+# Install base package
+pip install django-visual-editor
 
-# Install Node.js dependencies for frontend build
-cd frontend
-npm install
+# Or install with AI support
+pip install django-visual-editor[ai]
 ```
 
-### 2. Build Frontend
+### From Source (Development)
 
 ```bash
+# Clone repository
+git clone https://github.com/hvlads/django-visual-editor.git
+cd django-visual-editor
+
+# Install Python dependencies
+pip install -e ".[ai]"
+
+# Build frontend
 cd frontend
+npm install
 npm run build
 ```
 
 For development with automatic rebuild:
 
 ```bash
+cd frontend
 npm run dev
 ```
 
-### 3. Configure Django
+### Configure Django
 
 Add to `settings.py`:
 
@@ -89,11 +106,65 @@ if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 ```
 
-### 4. Run Migrations
+### Run Migrations
 
 ```bash
 python manage.py migrate
 ```
+
+## AI Assistant Setup (Optional)
+
+To enable AI features, configure in `settings.py`:
+
+```python
+import os
+
+VISUAL_EDITOR_AI_CONFIG = {
+    'enabled': True,
+    'default_model': 'yandex-gpt',  # ID from models list below
+
+    'models': [
+        {
+            'id': 'yandex-gpt',
+            'name': 'YandexGPT',
+            'provider': 'Yandex',
+            'model': f"gpt://{os.environ.get('YANDEX_FOLDER_ID')}/yandexgpt/latest",
+            'api_key': os.environ.get('YANDEX_API_KEY'),
+            'base_url': 'https://llm.api.cloud.yandex.net/v1',
+            'project': os.environ.get('YANDEX_FOLDER_ID'),
+        },
+        {
+            'id': 'gpt-4o',
+            'name': 'GPT-4o',
+            'provider': 'OpenAI',
+            'model': 'gpt-4o',
+            'api_key': os.environ.get('OPENAI_API_KEY'),
+            'base_url': None,  # Uses OpenAI default
+            'project': None,
+        },
+    ],
+}
+```
+
+Set environment variables in `.env`:
+
+```bash
+# Yandex Cloud AI
+YANDEX_API_KEY=your-api-key
+YANDEX_FOLDER_ID=your-folder-id
+
+# OpenAI (optional)
+OPENAI_API_KEY=sk-...
+```
+
+### Using the AI Panel
+
+1. Click 🤖 button on blocks to add them to context
+2. Open the AI panel on the right side
+3. Select a model from the dropdown (or use "Default Model")
+4. Choose mode: **Generate** (new content) or **Edit** (improve existing)
+5. Enter your prompt and optional instructions
+6. Click Generate/Apply
 
 ## Usage
 
@@ -257,7 +328,8 @@ django-visual-editor/
 │   ├── models.py              # Model for uploaded images
 │   ├── widgets.py             # Django widget
 │   ├── fields.py              # Custom model field
-│   ├── views.py               # View for image upload
+│   ├── views.py               # Views for image upload and AI assistant
+│   ├── ai_service.py          # AI service for content generation
 │   ├── urls.py                # URL configuration
 │   ├── management/            # Management commands
 │   ├── static/                # Static files (compiled)
@@ -265,9 +337,9 @@ django-visual-editor/
 ├── frontend/                  # TypeScript sources
 │   ├── src/
 │   │   ├── blocks/           # Block types (paragraph, heading, list, code, quote, image)
-│   │   ├── editor/           # Block editor, contextual toolbar, block menu
+│   │   ├── editor/           # Block editor, contextual toolbar, block menu, AI panel
 │   │   ├── utils/            # Utils (upload, compression)
-│   │   └── styles/           # CSS styles
+│   │   └── styles/           # CSS styles (blocks, AI assistant)
 │   ├── package.json
 │   ├── tsconfig.json
 │   └── webpack.config.js
