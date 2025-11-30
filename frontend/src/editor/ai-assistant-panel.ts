@@ -164,7 +164,11 @@ export class AIAssistantPanel {
   private attachEvents(): void {
     // Toggle panel
     const toggleBtn = this.panelElement.querySelector('.ai-panel-toggle')!
-    toggleBtn.addEventListener('click', () => this.toggle())
+    toggleBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      this.toggle()
+    })
 
     // Mode tabs
     this.panelElement.querySelectorAll('.ai-tab').forEach(tab => {
@@ -178,15 +182,25 @@ export class AIAssistantPanel {
 
     // Model selection
     this.modelSelect.addEventListener('change', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
       this.selectedModel = (e.target as HTMLSelectElement).value
     })
 
     // Clear context
     const clearBtn = this.panelElement.querySelector('.ai-context-clear')!
-    clearBtn.addEventListener('click', () => this.clearContext())
+    clearBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      this.clearContext()
+    })
 
     // Generate button
-    this.generateBtn.addEventListener('click', () => this.sendPrompt())
+    this.generateBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      this.sendPrompt()
+    })
 
     // Enter to submit (Ctrl/Cmd + Enter in textareas)
     this.promptTextarea.addEventListener('keydown', (e) => {
@@ -314,6 +328,8 @@ export class AIAssistantPanel {
       // Attach remove events
       this.contextList.querySelectorAll('.remove-context-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
+          e.preventDefault()
+          e.stopPropagation()
           const id = (e.currentTarget as HTMLElement).dataset.blockId!
           this.removeFromContext(id)
         })

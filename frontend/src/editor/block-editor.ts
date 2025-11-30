@@ -216,7 +216,41 @@ export class BlockEditor {
       insertIndex = this.blocks.indexOf(this.selectedBlock) + 1;
     }
 
-    elements.forEach((el, i) => {
+    let currentInsertIndex = insertIndex;
+
+    elements.forEach((el) => {
+      const tagName = el.tagName.toLowerCase();
+
+      // Check for inline elements in text blocks
+      if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'div'].includes(tagName)) {
+        const inlineBlocks = this.parseInlineElements(el);
+
+        if (inlineBlocks.length > 1) {
+          // Has inline elements - insert each as separate block
+          inlineBlocks.forEach(blockData => {
+            const block = BlockFactory.createBlock(blockData);
+            block.onChange(() => this.updateTextarea());
+            block.onSelect((selectedBlock) => {
+              this.selectedBlock = selectedBlock;
+              this.contextualToolbar.show(selectedBlock);
+              this.notifyBlockSelected(selectedBlock);
+            });
+
+            this.blocks.splice(currentInsertIndex, 0, block);
+
+            if (currentInsertIndex < this.editorElement.children.length) {
+              this.editorElement.insertBefore(block.getElement(), this.editorElement.children[currentInsertIndex]);
+            } else {
+              this.editorElement.appendChild(block.getElement());
+            }
+
+            currentInsertIndex++;
+          });
+          return;
+        }
+      }
+
+      // Normal block processing
       const blockData = this.htmlElementToBlockData(el);
       if (blockData) {
         const block = BlockFactory.createBlock(blockData);
@@ -227,15 +261,15 @@ export class BlockEditor {
           this.notifyBlockSelected(selectedBlock);
         });
 
-        // Add to blocks array at specific index
-        this.blocks.splice(insertIndex + i, 0, block);
+        this.blocks.splice(currentInsertIndex, 0, block);
 
-        // Add to DOM at specific position
-        if (insertIndex + i < this.editorElement.children.length) {
-          this.editorElement.insertBefore(block.getElement(), this.editorElement.children[insertIndex + i]);
+        if (currentInsertIndex < this.editorElement.children.length) {
+          this.editorElement.insertBefore(block.getElement(), this.editorElement.children[currentInsertIndex]);
         } else {
           this.editorElement.appendChild(block.getElement());
         }
+
+        currentInsertIndex++;
       }
     });
 
@@ -549,6 +583,30 @@ export class BlockEditor {
 
     // Has HTML elements - parse them
     elements.forEach(el => {
+      const tagName = el.tagName.toLowerCase();
+
+      // Check for inline elements in text blocks
+      if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'div'].includes(tagName)) {
+        const inlineBlocks = this.parseInlineElements(el);
+
+        if (inlineBlocks.length > 1) {
+          // Has inline elements - create separate blocks
+          inlineBlocks.forEach(blockData => {
+            const block = BlockFactory.createBlock(blockData);
+            block.onChange(() => this.updateTextarea());
+            block.onSelect((selectedBlock) => {
+              this.selectedBlock = selectedBlock;
+              this.contextualToolbar.show(selectedBlock);
+              this.notifyBlockSelected(selectedBlock);
+            });
+            this.blocks.push(block);
+            this.editorElement.appendChild(block.getElement());
+          });
+          return;
+        }
+      }
+
+      // Normal block processing
       const blockData = this.htmlElementToBlockData(el);
       if (blockData) {
         const block = BlockFactory.createBlock(blockData);
@@ -605,6 +663,115 @@ export class BlockEditor {
     }
 
     return Object.keys(inlineStyles).length > 0 ? inlineStyles : undefined;
+  }
+
+  /**
+   * Parse inline elements (img, a, b, i, u, etc.) and split into separate blocks
+   */
+  private parseInlineElements(el: Element): BlockData[] {
+    const blocks: BlockData[] = []
+
+    const processNode = (node: Node, currentText: string = ''): string => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return currentText + (node.textContent || '')
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        const element = node as HTMLElement
+        const tagName = element.tagName.toLowerCase()
+
+        // Create paragraph block from accumulated text
+        if (currentText.trim()) {
+          blocks.push({
+            id: BlockFactory.generateId(),
+            type: 'paragraph',
+            content: currentText.trim(),
+            styles: [],
+          })
+          currentText = ''
+        }
+
+        // Handle inline elements
+        switch (tagName) {
+          case 'img':
+            const imgEl = element as HTMLImageElement
+            const width = imgEl.getAttribute('width') ? parseInt(imgEl.getAttribute('width')!) : 0
+            blocks.push({
+              id: BlockFactory.generateId(),
+              type: 'image',
+              content: imgEl.src || imgEl.getAttribute('src') || '',
+              styles: Array.from(imgEl.classList),
+              metadata: { width }
+            })
+            return ''
+
+          case 'a':
+            const linkText = element.textContent || ''
+            blocks.push({
+              id: BlockFactory.generateId(),
+              type: 'paragraph',
+              content: linkText,
+              styles: ['link'],
+            })
+            return ''
+
+          case 'b':
+          case 'strong':
+          case 'i':
+          case 'em':
+          case 'u':
+            // Извлекаем только текст без стилей (по требованию пользователя)
+            const formattedText = element.textContent || ''
+            if (formattedText.trim()) {
+              blocks.push({
+                id: BlockFactory.generateId(),
+                type: 'paragraph',
+                content: formattedText.trim(),
+                styles: [],
+              })
+            }
+            return ''
+
+          case 'br':
+            if (currentText.trim()) {
+              blocks.push({
+                id: BlockFactory.generateId(),
+                type: 'paragraph',
+                content: currentText.trim(),
+                styles: [],
+              })
+              return ''
+            }
+            return currentText
+
+          default:
+            // Recursively process children
+            let accumulated = currentText
+            element.childNodes.forEach(child => {
+              accumulated = processNode(child, accumulated)
+            })
+            return accumulated
+        }
+      }
+
+      return currentText
+    }
+
+    // Process all child nodes
+    let remainingText = ''
+    el.childNodes.forEach(child => {
+      remainingText = processNode(child, remainingText)
+    })
+
+    // Create final paragraph from remaining text
+    if (remainingText.trim()) {
+      blocks.push({
+        id: BlockFactory.generateId(),
+        type: 'paragraph',
+        content: remainingText.trim(),
+        styles: [],
+      })
+    }
+
+    return blocks
   }
 
   /**
