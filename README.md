@@ -123,6 +123,10 @@ VISUAL_EDITOR_AI_CONFIG = {
     'enabled': True,
     'default_model': 'yandex-gpt',  # ID from models list below
 
+    # AI Generation Parameters
+    'temperature': 0.7,   # Controls randomness (0.0 - 2.0). Lower = more focused, higher = more creative
+    'max_tokens': 2000,   # Maximum length of generated content
+
     'models': [
         {
             'id': 'yandex-gpt',

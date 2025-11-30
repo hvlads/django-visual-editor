@@ -164,12 +164,16 @@ The context blocks below show the content to edit. Apply the requested changes a
                 f"AI request: model_id={model_id}, model_name={model_name}, mode={mode}, prompt_length={len(prompt)}"
             )
 
+            # Get temperature and max_tokens from config or use defaults
+            temperature = self.config.get("temperature", 0.7)
+            max_tokens = self.config.get("max_tokens", 2000)
+
             # Call OpenAI API with the specific client and model
             response = client.chat.completions.create(
                 model=model_name,
                 messages=messages,
-                temperature=0.7,  # Balanced creativity
-                max_tokens=2000,  # Reasonable limit for article content
+                temperature=temperature,
+                max_tokens=max_tokens,
             )
 
             # Extract content from response
