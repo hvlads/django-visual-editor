@@ -7,6 +7,7 @@ export class ContextualToolbar {
   private element: HTMLElement;
   private currentBlock: BaseBlock | null = null;
   private linkDialogOpen: boolean = false;
+  private savedSelection: Range | null = null;
 
   constructor() {
     this.element = this.createToolbar();
@@ -23,30 +24,6 @@ export class ContextualToolbar {
     toolbar.style.display = 'none';
 
     toolbar.innerHTML = `
-      <!-- Text Formatting -->
-      <div class="toolbar-group">
-        <button type="button" class="toolbar-btn" data-format="bold" title="Bold (Ctrl+B)">
-          <strong>B</strong>
-        </button>
-        <button type="button" class="toolbar-btn" data-format="italic" title="Italic (Ctrl+I)">
-          <em>I</em>
-        </button>
-        <button type="button" class="toolbar-btn" data-format="underline" title="Underline (Ctrl+U)">
-          <u>U</u>
-        </button>
-      </div>
-
-      <div class="toolbar-divider"></div>
-
-      <!-- Link -->
-      <div class="toolbar-group">
-        <button type="button" class="toolbar-btn" data-action="link" title="Insert Link">
-          🔗
-        </button>
-      </div>
-
-      <div class="toolbar-divider"></div>
-
       <!-- Alignment -->
       <div class="toolbar-group">
         <button type="button" class="toolbar-btn" data-align="left" title="Align Left">
@@ -58,35 +35,6 @@ export class ContextualToolbar {
         <button type="button" class="toolbar-btn" data-align="right" title="Align Right">
           ➡️
         </button>
-      </div>
-
-      <div class="toolbar-divider"></div>
-
-      <!-- Size -->
-      <div class="toolbar-group">
-        <label class="toolbar-label">Size:</label>
-        <select class="toolbar-select size-select">
-          <option value="">Default</option>
-          <option value="text-sm">Small</option>
-          <option value="text-base">Normal</option>
-          <option value="text-lg">Large</option>
-          <option value="text-xl">X-Large</option>
-          <option value="text-2xl">2X-Large</option>
-        </select>
-      </div>
-
-      <div class="toolbar-divider"></div>
-
-      <!-- Color -->
-      <div class="toolbar-group">
-        <label class="toolbar-label">Color:</label>
-        <select class="toolbar-select color-select">
-          <option value="text-gray-900">⚫ Default</option>
-          <option value="text-blue-600">🔵 Blue</option>
-          <option value="text-green-600">🟢 Green</option>
-          <option value="text-red-600">🔴 Red</option>
-          <option value="text-yellow-600">🟡 Yellow</option>
-        </select>
       </div>
 
       <div class="toolbar-divider"></div>
@@ -109,13 +57,6 @@ export class ContextualToolbar {
           🗑️ Delete
         </button>
       </div>
-
-      <!-- Link Dialog -->
-      <div class="link-dialog" style="display: none;">
-        <input type="url" class="link-input" placeholder="Enter URL...">
-        <button type="button" class="btn-confirm">✓</button>
-        <button type="button" class="btn-cancel">✗</button>
-      </div>
     `;
 
     return toolbar;
@@ -125,15 +66,6 @@ export class ContextualToolbar {
    * Attach event listeners
    */
   private attachEvents(): void {
-    // Text formatting buttons
-    const formatButtons = this.element.querySelectorAll('[data-format]');
-    formatButtons.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const format = (e.currentTarget as HTMLElement).dataset.format;
-        if (format) this.applyFormat(format);
-      });
-    });
-
     // Alignment buttons
     const alignButtons = this.element.querySelectorAll('[data-align]');
     alignButtons.forEach(btn => {
@@ -141,38 +73,6 @@ export class ContextualToolbar {
         const align = (e.currentTarget as HTMLElement).dataset.align;
         if (align) this.applyAlignment(align);
       });
-    });
-
-    // Size select
-    const sizeSelect = this.element.querySelector('.size-select') as HTMLSelectElement;
-    sizeSelect?.addEventListener('change', () => {
-      this.applySize(sizeSelect.value);
-    });
-
-    // Color select
-    const colorSelect = this.element.querySelector('.color-select') as HTMLSelectElement;
-    colorSelect?.addEventListener('change', () => {
-      this.applyColor(colorSelect.value);
-    });
-
-    // Link button
-    const linkBtn = this.element.querySelector('[data-action="link"]');
-    linkBtn?.addEventListener('click', () => {
-      this.showLinkDialog();
-    });
-
-    // Link dialog
-    const confirmBtn = this.element.querySelector('.btn-confirm');
-    const cancelBtn = this.element.querySelector('.btn-cancel');
-    const linkInput = this.element.querySelector('.link-input') as HTMLInputElement;
-
-    confirmBtn?.addEventListener('click', () => {
-      this.insertLink(linkInput.value);
-      this.hideLinkDialog();
-    });
-
-    cancelBtn?.addEventListener('click', () => {
-      this.hideLinkDialog();
     });
 
     // Visual/HTML toggle
@@ -213,13 +113,24 @@ export class ContextualToolbar {
   }
 
   /**
-   * Position toolbar near the selected block
+   * Position toolbar near the selected block or text selection
    */
   private positionToolbar(block: BaseBlock): void {
-    const blockEl = block.getElement();
-    const rect = blockEl.getBoundingClientRect();
+    let rect: DOMRect;
 
-    // Position above the block
+    // Check if there's a text selection
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0 && selection.toString().trim().length > 0) {
+      // Position near the text selection
+      const range = selection.getRangeAt(0);
+      rect = range.getBoundingClientRect();
+    } else {
+      // Position near the block
+      const blockEl = block.getElement();
+      rect = blockEl.getBoundingClientRect();
+    }
+
+    // Position above the selection/block
     this.element.style.position = 'fixed';
     this.element.style.top = `${rect.top - 50}px`;
     this.element.style.left = `${rect.left}px`;
@@ -321,11 +232,30 @@ export class ContextualToolbar {
    * Show link dialog
    */
   private showLinkDialog(): void {
+    // Save current selection
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      this.savedSelection = selection.getRangeAt(0).cloneRange();
+    }
+
     const dialog = this.element.querySelector('.link-dialog') as HTMLElement;
     dialog.style.display = 'flex';
     this.linkDialogOpen = true;
 
     const input = dialog.querySelector('.link-input') as HTMLInputElement;
+
+    // Check if selected text is already a link and populate the input
+    if (this.savedSelection) {
+      const container = this.savedSelection.commonAncestorContainer;
+      const linkElement = container.nodeType === 3
+        ? (container.parentElement?.closest('a') as HTMLAnchorElement)
+        : (container as HTMLElement).closest('a');
+
+      if (linkElement) {
+        input.value = linkElement.href;
+      }
+    }
+
     input.focus();
   }
 
@@ -339,6 +269,9 @@ export class ContextualToolbar {
 
     const input = dialog.querySelector('.link-input') as HTMLInputElement;
     input.value = '';
+
+    // Clear saved selection
+    this.savedSelection = null;
   }
 
   /**
@@ -347,9 +280,55 @@ export class ContextualToolbar {
   private insertLink(url: string): void {
     if (!url || !this.currentBlock) return;
 
-    // This is a simplified implementation
-    // In a real editor, you'd wrap selected text in an <a> tag
-    document.execCommand('createLink', false, url);
+    // Restore saved selection
+    if (!this.savedSelection) return;
+
+    const selection = window.getSelection();
+    if (!selection) return;
+
+    // Restore the saved selection
+    selection.removeAllRanges();
+    selection.addRange(this.savedSelection);
+
+    // Get selected text
+    let selectedText = this.savedSelection.toString();
+
+    // If no text is selected, use the URL as the link text
+    if (!selectedText || selectedText.trim() === '') {
+      selectedText = url;
+    }
+
+    // Check if we're editing an existing link
+    const container = this.savedSelection.commonAncestorContainer;
+    const existingLink = container.nodeType === 3
+      ? (container.parentElement?.closest('a') as HTMLAnchorElement)
+      : (container as HTMLElement).closest('a');
+
+    if (existingLink) {
+      // Update existing link
+      existingLink.href = url;
+    } else {
+      // Create new link element
+      const link = document.createElement('a');
+      link.href = url;
+      link.textContent = selectedText;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+
+      // Delete the selected content and insert the link
+      this.savedSelection.deleteContents();
+      this.savedSelection.insertNode(link);
+
+      // Move cursor after the link
+      const range = document.createRange();
+      range.setStartAfter(link);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    // Trigger change event to save the content
+    this.currentBlock.triggerChange();
   }
 
   /**
@@ -383,8 +362,32 @@ export class ContextualToolbar {
         return;
       }
 
-      // Use toHTML() to get clean HTML without control buttons
-      const html = this.currentBlock.toHTML();
+      // Get the current innerHTML from the editable element to preserve links
+      const editableElement = contentEl.querySelector('[data-editable]');
+      let html: string;
+
+      if (editableElement) {
+        // Get the actual HTML from the editable element
+        html = editableElement.innerHTML;
+
+        // Wrap it in the appropriate tag based on block type
+        const blockData = this.currentBlock.getData();
+        const classes = blockData.styles.length > 0 ? ` class="${blockData.styles.join(' ')}"` : '';
+        const inlineStyles = this.currentBlock['stylesToString'] ? this.currentBlock['stylesToString']() : '';
+
+        if (blockData.type === 'heading' && blockData.metadata?.level) {
+          const level = blockData.metadata.level;
+          html = `<h${level}${classes}${inlineStyles}>${html}</h${level}>`;
+        } else if (blockData.type === 'quote') {
+          html = `<blockquote${classes}${inlineStyles}>${html}</blockquote>`;
+        } else {
+          html = `<p${classes}${inlineStyles}>${html}</p>`;
+        }
+      } else {
+        // Fallback to toHTML() method
+        html = this.currentBlock.toHTML();
+      }
+
       const textarea = document.createElement('textarea');
       textarea.className = 'html-editor';
       textarea.value = html;
@@ -419,20 +422,31 @@ export class ContextualToolbar {
     const textarea = contentEl?.querySelector('textarea.html-editor') as HTMLTextAreaElement;
 
     if (textarea) {
-      const html = textarea.value;
+      const html = textarea.value.trim();
 
-      // Update block content
-      contentEl!.innerHTML = html;
+      // Parse the HTML to extract inner content
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
 
-      // Update block data from the new HTML
-      const editableElement = contentEl?.querySelector('[data-editable]');
-      if (editableElement && this.currentBlock) {
-        const blockData = this.currentBlock.getData();
-        if (typeof blockData.content === 'string') {
-          blockData.content = editableElement.textContent || '';
-        }
-        this.currentBlock.triggerChange();
+      // Find the main content element (p, h1-h6, blockquote, etc.)
+      const mainElement = tempDiv.querySelector('p, h1, h2, h3, h4, h5, h6, blockquote');
+      const innerContent = mainElement ? mainElement.innerHTML : html;
+
+      // Re-render the block with the new content
+      const blockData = this.currentBlock.getData();
+
+      // Store the inner HTML content
+      if (typeof blockData.content === 'string') {
+        blockData.content = innerContent;
       }
+
+      // Re-render the block content
+      contentEl!.innerHTML = this.currentBlock['renderContent']();
+
+      // Re-attach event listeners
+      this.currentBlock['setupContentEditing']();
+
+      this.currentBlock.triggerChange();
     }
   }
 

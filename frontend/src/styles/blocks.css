@@ -470,6 +470,45 @@
   max-width: 800px;
 }
 
+/* ==== TEXT TOOLBAR (for selected text) ==== */
+.text-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 12px;
+  background: white;
+  border: 2px solid #8b5cf6;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  animation: fadeIn 0.2s ease-in;
+  flex-wrap: wrap;
+  max-width: 600px;
+}
+
+.text-toolbar .toolbar-select {
+  padding: 4px 8px;
+  font-size: 13px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+}
+
+.text-toolbar .toolbar-select:hover {
+  border-color: #8b5cf6;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* ==== BLOCK MENU ==== */
 .block-menu {
   min-width: 300px;

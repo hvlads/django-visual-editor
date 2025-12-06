@@ -66,7 +66,7 @@ export class ListBlock extends BaseBlock {
     const listItems = this.contentElement.querySelectorAll('li[data-editable]');
 
     listItems.forEach(item => {
-      items.push(item.textContent || '');
+      items.push(item.innerHTML || '');
     });
 
     this.data.content = items;

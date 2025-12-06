@@ -9,8 +9,10 @@ export class HeadingBlock extends BaseBlock {
     const level = this.data.metadata?.level || 1;
     const content = typeof this.data.content === 'string' ? this.data.content : '';
     const classes = this.data.styles.length > 0 ? ` class="${this.data.styles.join(' ')}"` : '';
+    // Use innerHTML by default, don't escape HTML to preserve links and other formatting
+    const displayContent = content || 'Heading';
 
-    return `<h${level} contenteditable="true" data-editable${classes}>${content || 'Heading'}</h${level}>`;
+    return `<h${level} contenteditable="true" data-editable${classes}>${displayContent}</h${level}>`;
   }
 
   protected getTagLabel(): string {

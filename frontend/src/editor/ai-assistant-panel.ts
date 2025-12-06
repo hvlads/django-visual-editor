@@ -410,22 +410,28 @@ export class AIAssistantPanel {
       const data = await response.json()
 
       if (data.success) {
-        // Success! Insert or replace content
-        if (this.mode === 'generate') {
-          this.editor.insertAIContent(data.content)
-        } else {
-          this.editor.replaceBlocksWithAI(data.content, this.contextBlocks)
+        try {
+          // Success! Insert or replace content
+          if (this.mode === 'generate') {
+            this.editor.insertAIContent(data.content)
+          } else {
+            this.editor.replaceBlocksWithAI(data.content, this.contextBlocks)
+          }
+
+          // Clear form
+          this.clearForm()
+
+          // Show success feedback (optional)
+          this.showSuccess('Content generated successfully!')
+        } catch (insertError) {
+          console.error('Error inserting AI content:', insertError)
+          this.showError('Error inserting content: ' + (insertError instanceof Error ? insertError.message : 'Unknown error'))
         }
-
-        // Clear form
-        this.clearForm()
-
-        // Show success feedback (optional)
-        this.showSuccess('Content generated successfully!')
       } else {
         this.showError(data.error || 'Unknown error occurred')
       }
     } catch (error) {
+      console.error('AI request error:', error)
       this.showError(error instanceof Error ? error.message : 'Network error')
     } finally {
       this.setLoading(false)

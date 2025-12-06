@@ -130,7 +130,8 @@ export abstract class BaseBlock {
 
     const editableElement = this.contentElement.querySelector('[data-editable]');
     if (editableElement) {
-      this.data.content = editableElement.textContent || '';
+      // Use innerHTML to preserve HTML tags like links
+      this.data.content = editableElement.innerHTML || '';
     }
   }
 

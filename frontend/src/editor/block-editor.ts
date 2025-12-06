@@ -3,6 +3,7 @@ import { BlockFactory } from '../blocks/block-factory';
 import { BlockData, BlockType } from '../blocks/types';
 import { EditorConfig } from '../types';
 import { ContextualToolbar } from './contextual-toolbar';
+import { TextToolbar } from './text-toolbar';
 import { BlockMenu } from './block-menu';
 import { PasteModal } from './paste-modal';
 import { HTMLEditor } from './html-editor';
@@ -18,6 +19,7 @@ export class BlockEditor {
   private config: EditorConfig;
   private selectedBlock: BaseBlock | null = null;
   private contextualToolbar: ContextualToolbar;
+  private textToolbar: TextToolbar;
   private blockMenu: BlockMenu;
   private addBlockButton: HTMLElement;
   private pendingUploads: number = 0;
@@ -44,8 +46,11 @@ export class BlockEditor {
     this.textareaElement = textarea;
     this.config = config;
 
-    // Initialize contextual toolbar
+    // Initialize contextual toolbar (for blocks)
     this.contextualToolbar = new ContextualToolbar();
+
+    // Initialize text toolbar (for selected text)
+    this.textToolbar = new TextToolbar();
 
     // Initialize block menu
     this.blockMenu = new BlockMenu();
@@ -219,38 +224,7 @@ export class BlockEditor {
     let currentInsertIndex = insertIndex;
 
     elements.forEach((el) => {
-      const tagName = el.tagName.toLowerCase();
-
-      // Check for inline elements in text blocks
-      if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'div'].includes(tagName)) {
-        const inlineBlocks = this.parseInlineElements(el);
-
-        if (inlineBlocks.length > 1) {
-          // Has inline elements - insert each as separate block
-          inlineBlocks.forEach(blockData => {
-            const block = BlockFactory.createBlock(blockData);
-            block.onChange(() => this.updateTextarea());
-            block.onSelect((selectedBlock) => {
-              this.selectedBlock = selectedBlock;
-              this.contextualToolbar.show(selectedBlock);
-              this.notifyBlockSelected(selectedBlock);
-            });
-
-            this.blocks.splice(currentInsertIndex, 0, block);
-
-            if (currentInsertIndex < this.editorElement.children.length) {
-              this.editorElement.insertBefore(block.getElement(), this.editorElement.children[currentInsertIndex]);
-            } else {
-              this.editorElement.appendChild(block.getElement());
-            }
-
-            currentInsertIndex++;
-          });
-          return;
-        }
-      }
-
-      // Normal block processing
+      // Use htmlElementToBlockData which now preserves innerHTML including links
       const blockData = this.htmlElementToBlockData(el);
       if (blockData) {
         const block = BlockFactory.createBlock(blockData);
@@ -414,10 +388,12 @@ export class BlockEditor {
     document.addEventListener('click', (e) => {
       const target = e.target as Node;
       const clickedToolbar = document.querySelector('.contextual-toolbar')?.contains(target);
+      const clickedTextToolbar = document.querySelector('.text-toolbar')?.contains(target);
       const clickedBlockMenu = document.querySelector('.block-menu')?.contains(target);
 
-      if (!this.editorElement.contains(target) && !clickedToolbar && !clickedBlockMenu) {
+      if (!this.editorElement.contains(target) && !clickedToolbar && !clickedTextToolbar && !clickedBlockMenu) {
         this.deselectAll();
+        this.textToolbar.hide();
       }
     });
 
@@ -434,6 +410,39 @@ export class BlockEditor {
         e.preventDefault();
         this.showBlockMenu();
       }
+    });
+
+    // Text selection - show text toolbar when text is selected
+    document.addEventListener('mouseup', (e) => {
+      setTimeout(() => {
+        // Check if clicked on text toolbar - don't hide it
+        const target = e.target as Node;
+        const clickedTextToolbar = document.querySelector('.text-toolbar')?.contains(target);
+
+        const selection = window.getSelection();
+        if (selection && selection.toString().trim().length > 0) {
+          // Find which block contains the selection
+          const range = selection.getRangeAt(0);
+          const container = range.commonAncestorContainer;
+          const blockElement = (container.nodeType === 3 ? container.parentElement : container as HTMLElement)?.closest('.block-wrapper');
+
+          if (blockElement && this.editorElement.contains(blockElement)) {
+            // Find the block object
+            const blockId = blockElement.getAttribute('data-block-id');
+            const block = this.blocks.find(b => b.getData().id === blockId);
+
+            if (block) {
+              this.selectedBlock = block;
+              // Show TEXT toolbar for selected text, hide block toolbar
+              this.contextualToolbar.hide();
+              this.textToolbar.show(block, selection);
+            }
+          }
+        } else if (!clickedTextToolbar) {
+          // No text selected and didn't click toolbar - hide text toolbar
+          this.textToolbar.hide();
+        }
+      }, 10);
     });
   }
 
@@ -583,30 +592,7 @@ export class BlockEditor {
 
     // Has HTML elements - parse them
     elements.forEach(el => {
-      const tagName = el.tagName.toLowerCase();
-
-      // Check for inline elements in text blocks
-      if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'div'].includes(tagName)) {
-        const inlineBlocks = this.parseInlineElements(el);
-
-        if (inlineBlocks.length > 1) {
-          // Has inline elements - create separate blocks
-          inlineBlocks.forEach(blockData => {
-            const block = BlockFactory.createBlock(blockData);
-            block.onChange(() => this.updateTextarea());
-            block.onSelect((selectedBlock) => {
-              this.selectedBlock = selectedBlock;
-              this.contextualToolbar.show(selectedBlock);
-              this.notifyBlockSelected(selectedBlock);
-            });
-            this.blocks.push(block);
-            this.editorElement.appendChild(block.getElement());
-          });
-          return;
-        }
-      }
-
-      // Normal block processing
+      // Use htmlElementToBlockData which now preserves innerHTML including links
       const blockData = this.htmlElementToBlockData(el);
       if (blockData) {
         const block = BlockFactory.createBlock(blockData);
@@ -779,7 +765,7 @@ export class BlockEditor {
    */
   private htmlElementToBlockData(el: Element): BlockData | null {
     const tagName = el.tagName.toLowerCase();
-    const content = el.textContent || '';
+    const content = el.innerHTML || '';
     const classes = Array.from(el.classList);
     const inlineStyles = this.parseInlineStyles(el as HTMLElement);
 
@@ -810,7 +796,7 @@ export class BlockEditor {
 
       case 'ul':
       case 'ol':
-        const items = Array.from(el.querySelectorAll('li')).map(li => li.textContent || '');
+        const items = Array.from(el.querySelectorAll('li')).map(li => li.innerHTML || '');
         return {
           id: BlockFactory.generateId(),
           type: 'list',
@@ -1070,25 +1056,25 @@ export class BlockEditor {
       case 'h5':
       case 'h6':
         type = 'heading';
-        content = element.textContent || '';
+        content = element.innerHTML || '';
         metadata.level = parseInt(tagName[1]);
         break;
 
       case 'p':
         type = 'paragraph';
-        content = element.textContent || '';
+        content = element.innerHTML || '';
         break;
 
       case 'ul':
       case 'ol':
         type = 'list';
-        content = Array.from(element.querySelectorAll('li')).map(li => li.textContent || '');
+        content = Array.from(element.querySelectorAll('li')).map(li => li.innerHTML || '');
         metadata.ordered = tagName === 'ol';
         break;
 
       case 'blockquote':
         type = 'quote';
-        content = element.textContent || '';
+        content = element.innerHTML || '';
         break;
 
       case 'pre':
@@ -1110,7 +1096,7 @@ export class BlockEditor {
         // If unknown tag but has text, treat as paragraph
         if (element.textContent && element.textContent.trim()) {
           type = 'paragraph';
-          content = element.textContent;
+          content = element.innerHTML;
         }
     }
 
