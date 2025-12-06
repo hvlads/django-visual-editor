@@ -417,11 +417,24 @@ export abstract class BaseBlock {
       // Place cursor at end
       const range = document.createRange();
       const sel = window.getSelection();
-      if (sel && editable.childNodes.length > 0) {
-        range.setStart(editable.childNodes[0], editable.textContent?.length || 0);
-        range.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(range);
+
+      if (sel) {
+        try {
+          // If there are child nodes, place cursor at the end of the last one
+          if (editable.childNodes.length > 0) {
+            const lastNode = editable.childNodes[editable.childNodes.length - 1];
+            const offset = lastNode.nodeType === Node.TEXT_NODE
+              ? (lastNode.textContent?.length || 0)
+              : 1;
+            range.setStart(lastNode, offset);
+            range.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(range);
+          }
+        } catch (e) {
+          // If setStart fails, just focus the element without setting cursor
+          console.warn('Failed to set cursor position:', e);
+        }
       }
     }
   }
