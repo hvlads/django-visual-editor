@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-visual-editor"
-version = "0.5.0"
+version = "0.5.1"
 description = "Block-based visual editor for Django with inline styles, image support and rich formatting"
 readme = "README.md"
 requires-python = ">=3.9"

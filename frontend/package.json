@@ -1,6 +1,6 @@
 {
   "name": "django-visual-editor-frontend",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "TypeScript-based visual editor for Django",
   "scripts": {
     "build": "webpack --mode production",
