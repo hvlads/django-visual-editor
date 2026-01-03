@@ -97,6 +97,83 @@ export abstract class BaseBlock {
       this.triggerAddBlock();
     });
 
+    // Drag handle
+    const dragHandle = this.element.querySelector('.block-drag-handle');
+    if (dragHandle) {
+      dragHandle.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+      });
+
+      // Make the entire wrapper draggable
+      this.element.setAttribute('draggable', 'true');
+
+      this.element.addEventListener('dragstart', (e) => {
+        e.stopPropagation();
+        if (e.dataTransfer) {
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/html', this.element.innerHTML);
+          e.dataTransfer.setData('block-id', this.data.id);
+        }
+        this.element.classList.add('dragging');
+      });
+
+      this.element.addEventListener('dragend', (e) => {
+        e.stopPropagation();
+        this.element.classList.remove('dragging');
+      });
+
+      this.element.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer) {
+          e.dataTransfer.dropEffect = 'move';
+        }
+
+        const draggingElement = document.querySelector('.dragging');
+        if (draggingElement && draggingElement !== this.element) {
+          const rect = this.element.getBoundingClientRect();
+          const midpoint = rect.top + rect.height / 2;
+          const isAfter = e.clientY > midpoint;
+
+          this.element.classList.remove('drag-over-top', 'drag-over-bottom');
+          if (isAfter) {
+            this.element.classList.add('drag-over-bottom');
+          } else {
+            this.element.classList.add('drag-over-top');
+          }
+        }
+      });
+
+      this.element.addEventListener('dragleave', (e) => {
+        e.stopPropagation();
+        this.element.classList.remove('drag-over-top', 'drag-over-bottom');
+      });
+
+      this.element.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.element.classList.remove('drag-over-top', 'drag-over-bottom');
+
+        const draggedBlockId = e.dataTransfer?.getData('block-id');
+        if (draggedBlockId && draggedBlockId !== this.data.id) {
+          const rect = this.element.getBoundingClientRect();
+          const midpoint = rect.top + rect.height / 2;
+          const isAfter = e.clientY > midpoint;
+
+          // Dispatch reorder event
+          const event = new CustomEvent('reorderBlock', {
+            detail: {
+              draggedBlockId,
+              targetBlockId: this.data.id,
+              insertAfter: isAfter
+            },
+            bubbles: true
+          });
+          this.element.dispatchEvent(event);
+        }
+      });
+    }
+
     // Content editing
     if (this.contentElement) {
       this.setupContentEditing();

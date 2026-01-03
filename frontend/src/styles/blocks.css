@@ -115,6 +115,25 @@
   border-color: #9ca3af;
 }
 
+.block-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Dragging states */
+.block-wrapper.dragging {
+  opacity: 0.5;
+}
+
+.block-wrapper.drag-over-top {
+  border-top: 3px solid #3b82f6;
+  margin-top: 8px;
+}
+
+.block-wrapper.drag-over-bottom {
+  border-bottom: 3px solid #3b82f6;
+  margin-bottom: 8px;
+}
+
 .block-add {
   color: #10b981;
   font-weight: bold;

@@ -367,6 +367,12 @@ export class BlockEditor {
       this.removeBlock(block);
     }) as EventListener);
 
+    // Reorder block event
+    this.editorElement.addEventListener('reorderBlock', ((e: CustomEvent) => {
+      const { draggedBlockId, targetBlockId, insertAfter } = e.detail;
+      this.reorderBlock(draggedBlockId, targetBlockId, insertAfter);
+    }) as EventListener);
+
     // Add to AI context event
     this.editorElement.addEventListener('addToAIContext', ((e: CustomEvent) => {
       const block = e.detail.block as BaseBlock;
@@ -507,6 +513,57 @@ export class BlockEditor {
         this.addBlock('paragraph');
       }
     }
+  }
+
+  /**
+   * Reorder blocks via drag and drop
+   */
+  private reorderBlock(draggedBlockId: string, targetBlockId: string, insertAfter: boolean): void {
+    // Find blocks by ID
+    const draggedBlock = this.blocks.find(b => b.getData().id === draggedBlockId);
+    const targetBlock = this.blocks.find(b => b.getData().id === targetBlockId);
+
+    if (!draggedBlock || !targetBlock) return;
+
+    // Get current indices
+    const draggedIndex = this.blocks.indexOf(draggedBlock);
+    const targetIndex = this.blocks.indexOf(targetBlock);
+
+    if (draggedIndex === targetIndex) return;
+
+    // Remove dragged block from array
+    this.blocks.splice(draggedIndex, 1);
+
+    // Calculate new index (adjust for removal if needed)
+    let newIndex = targetIndex;
+    if (draggedIndex < targetIndex) {
+      newIndex--;
+    }
+    if (insertAfter) {
+      newIndex++;
+    }
+
+    // Insert at new position
+    this.blocks.splice(newIndex, 0, draggedBlock);
+
+    // Update DOM
+    const draggedElement = draggedBlock.getElement();
+    const targetElement = targetBlock.getElement();
+
+    if (insertAfter) {
+      // Insert after target
+      if (targetElement.nextSibling) {
+        this.editorElement.insertBefore(draggedElement, targetElement.nextSibling);
+      } else {
+        this.editorElement.appendChild(draggedElement);
+      }
+    } else {
+      // Insert before target
+      this.editorElement.insertBefore(draggedElement, targetElement);
+    }
+
+    // Update textarea
+    this.updateTextarea();
   }
 
   /**
