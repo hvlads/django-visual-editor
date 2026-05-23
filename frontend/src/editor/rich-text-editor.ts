@@ -16,6 +16,7 @@ export class RichTextEditor {
   private config: EditorConfig;
   private aiDialog: AIFloatingDialog | null = null;
   private isHTMLMode: boolean = false;
+  private lastSelectionRange: Range | null = null;
   private editorBody: HTMLElement;
   private dictation: any = null;
   private isDictating: boolean = false;
@@ -80,9 +81,17 @@ export class RichTextEditor {
       );
 
       this.toolbar.setAICallback(() => {
+        // Use saved range (handles iOS where selection clears before click fires)
         const sel = window.getSelection();
-        if (sel && sel.toString().trim() && this.isInsideEditor(sel)) {
-          this.triggerAIEditFromSelection(sel);
+        const hasLiveSelection = sel && sel.toString().trim() && this.isInsideEditor(sel);
+        if (hasLiveSelection) {
+          this.triggerAIEditFromSelection(sel!);
+        } else if (this.lastSelectionRange) {
+          const frag = this.lastSelectionRange.cloneContents();
+          const div = document.createElement('div');
+          div.appendChild(frag);
+          this.aiDialog?.showWithSelection(div.innerHTML, this.lastSelectionRange);
+          this.lastSelectionRange = null;
         } else {
           this.aiDialog?.show();
         }
@@ -116,6 +125,14 @@ export class RichTextEditor {
     // Update toolbar button states on cursor move
     this.editorDiv.addEventListener('keyup', () => this.toolbar.updateButtonStates());
     this.editorDiv.addEventListener('click', () => this.toolbar.updateButtonStates());
+
+    // Save selection on every change (needed on iOS where tap clears selection before click)
+    document.addEventListener('selectionchange', () => {
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount && sel.toString().trim() && this.isInsideEditor(sel)) {
+        this.lastSelectionRange = sel.getRangeAt(0).cloneRange();
+      }
+    });
 
     // Clean paste
     this.editorDiv.addEventListener('paste', (e) => {
