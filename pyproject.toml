@@ -32,11 +32,8 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "django-extensions>=4.1",
     "django>=4.2",
     "pillow>=10.0.0",
-    "werkzeug>=3.1.8",
-    "pyopenssl>=26.2.0",
 ]
 
 [project.optional-dependencies]
@@ -59,6 +56,9 @@ dev = [
     "pytest>=8.0.0",
     "pytest-django>=4.7.0",
     "ipython>=8.18.1",
+    "django-extensions>=4.1",
+    "werkzeug>=3.1.8",
+    "pyopenssl>=26.2.0",
 ]
 
 [tool.black]
