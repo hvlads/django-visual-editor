@@ -20,7 +20,7 @@
 }
 
 /* Hide the native textarea — JS syncs content into it */
-.visual-editor-container textarea {
+.visual-editor-container textarea:not(.rich-html-editor) {
   display: none !important;
 }
 

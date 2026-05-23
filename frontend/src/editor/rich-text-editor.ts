@@ -16,7 +16,6 @@ export class RichTextEditor {
   private config: EditorConfig;
   private aiDialog: AIFloatingDialog | null = null;
   private isHTMLMode: boolean = false;
-  private htmlTextarea: HTMLTextAreaElement | null = null;
   private editorBody: HTMLElement;
   private dictation: any = null;
   private isDictating: boolean = false;
@@ -120,6 +119,7 @@ export class RichTextEditor {
 
     // Clean paste
     this.editorDiv.addEventListener('paste', (e) => {
+      if (this.isHTMLMode) return;
       e.preventDefault();
       const html = e.clipboardData?.getData('text/html') || '';
       const plain = e.clipboardData?.getData('text/plain') || '';
@@ -181,7 +181,9 @@ export class RichTextEditor {
   }
 
   private updateTextarea(): void {
-    this.textareaElement.value = this.editorDiv.innerHTML;
+    this.textareaElement.value = this.isHTMLMode
+      ? this.editorDiv.innerText
+      : this.editorDiv.innerHTML;
   }
 
   private updateStats(): void {
@@ -250,29 +252,21 @@ export class RichTextEditor {
   }
 
   private switchToHTML(): void {
-    this.htmlTextarea = document.createElement('textarea');
-    this.htmlTextarea.className = 'rich-html-editor';
-    this.htmlTextarea.value = this.editorDiv.innerHTML;
-    this.htmlTextarea.addEventListener('input', () => {
-      this.textareaElement.value = this.htmlTextarea!.value;
-    });
-
-    this.editorDiv.style.display = 'none';
-    this.editorBody.appendChild(this.htmlTextarea);
+    const source = this.editorDiv.innerHTML;
+    this.editorDiv.className = 'rich-html-editor';
+    this.editorDiv.innerText = source;
+    this.editorDiv.focus();
     this.isHTMLMode = true;
     this.toolbar.setHTMLModeActive(true);
   }
 
   private switchToVisual(): void {
-    if (!this.htmlTextarea) return;
-
-    this.editorDiv.innerHTML = this.htmlTextarea.value;
-    this.htmlTextarea.remove();
-    this.htmlTextarea = null;
-    this.editorDiv.style.display = '';
+    const html = this.editorDiv.innerText;
+    this.editorDiv.className = 'rich-editor-content';
+    this.editorDiv.innerHTML = html;
+    this.isHTMLMode = false;
     this.updateTextarea();
     this.updateStats();
-    this.isHTMLMode = false;
     this.toolbar.setHTMLModeActive(false);
   }
 
