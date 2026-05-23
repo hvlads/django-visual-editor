@@ -387,7 +387,10 @@ export class AIFloatingDialog {
     this.resultContent.textContent = tmp.textContent || html
     this.resultSection.style.display = 'block'
 
-    // Show "Insert after" only when there's a selection to replace
+    // Label depends on whether text is selected
+    const applyBtn = this.panelElement.querySelector('.ai-panel-apply') as HTMLElement
+    if (applyBtn) applyBtn.textContent = this.savedRange ? 'Заменить' : 'Вставить'
+
     const insertAfterBtn = this.panelElement.querySelector('.ai-panel-insert-after') as HTMLElement
     if (insertAfterBtn) {
       insertAfterBtn.style.display = this.savedRange ? 'block' : 'none'

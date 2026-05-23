@@ -132,7 +132,7 @@ LOGOUT_REDIRECT_URL = "/"
 
 VISUAL_EDITOR_AI_CONFIG = {
     "enabled": True,
-    "default_model": "llama-4-scout",  # ID from models list below
+    "default_model": "gpt-oss-120b",  # ID from models list below
     # Available models with their configurations
     "models": [
         {
@@ -172,28 +172,28 @@ VISUAL_EDITOR_AI_CONFIG = {
             "project": None,
         },
         {
-            "id": "llama-4-scout",
-            "name": "Llama 4 Scout (free)",
+            "id": "gpt-oss-120b",
+            "name": "GPT OSS 120B (free)",
             "provider": "OpenRouter",
-            "model": "meta-llama/llama-4-scout:free",
+            "model": "openai/gpt-oss-120b:free",
             "api_key": os.environ.get("OPENROUTER_API_KEY"),
             "base_url": "https://openrouter.ai/api/v1",
             "project": None,
         },
         {
-            "id": "gemma-3-27b",
-            "name": "Gemma 3 27B (free)",
+            "id": "gpt-oss-20b",
+            "name": "GPT OSS 20B (free)",
             "provider": "OpenRouter",
-            "model": "google/gemma-3-27b-it:free",
+            "model": "openai/gpt-oss-20b:free",
             "api_key": os.environ.get("OPENROUTER_API_KEY"),
             "base_url": "https://openrouter.ai/api/v1",
             "project": None,
         },
         {
-            "id": "mistral-small",
-            "name": "Mistral Small 3.1 (free)",
+            "id": "nemotron-120b",
+            "name": "Nemotron 120B (free)",
             "provider": "OpenRouter",
-            "model": "mistralai/mistral-small-3.1-24b-instruct:free",
+            "model": "nvidia/nemotron-3-super-120b-a12b:free",
             "api_key": os.environ.get("OPENROUTER_API_KEY"),
             "base_url": "https://openrouter.ai/api/v1",
             "project": None,
