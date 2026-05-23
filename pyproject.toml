@@ -32,8 +32,11 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
+    "django-extensions>=4.1",
     "django>=4.2",
     "pillow>=10.0.0",
+    "werkzeug>=3.1.8",
+    "pyopenssl>=26.2.0",
 ]
 
 [project.optional-dependencies]

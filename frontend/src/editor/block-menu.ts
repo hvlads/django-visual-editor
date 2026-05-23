@@ -120,10 +120,7 @@ export class BlockMenu {
     // Click outside to close
     document.addEventListener('click', (e) => {
       if (!this.element.contains(e.target as Node) && this.element.style.display !== 'none') {
-        const addBlockBtn = document.querySelector('.add-block-btn');
-        if (!addBlockBtn?.contains(e.target as Node)) {
-          this.hide();
-        }
+        this.hide();
       }
     });
   }

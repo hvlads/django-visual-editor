@@ -7,7 +7,8 @@ import { TextToolbar } from './text-toolbar';
 import { BlockMenu } from './block-menu';
 import { PasteModal } from './paste-modal';
 import { HTMLEditor } from './html-editor';
-import { AIAssistantPanel, AIConfig } from './ai-assistant-panel';
+import { AIConfig } from './ai-assistant-panel'
+import { AIFloatingDialog } from './ai-floating-dialog';
 
 /**
  * Main Block Editor
@@ -21,14 +22,13 @@ export class BlockEditor {
   private contextualToolbar: ContextualToolbar;
   private textToolbar: TextToolbar;
   private blockMenu: BlockMenu;
-  private addBlockButton: HTMLElement;
   private pendingUploads: number = 0;
   private pasteModal: PasteModal | null = null;
   private htmlEditor: HTMLEditor | null = null;
   private htmlEditorContainer: HTMLElement | null = null;
-  private modeSwitchButton: HTMLElement;
   private isHTMLMode: boolean = false;
-  private aiPanel: AIAssistantPanel | null = null;
+  private aiDialog: AIFloatingDialog | null = null;
+  private statsBarElement: HTMLElement | null = null;
 
   constructor(
     editorId: string,
@@ -61,12 +61,6 @@ export class BlockEditor {
       this.showPasteModal();
     });
 
-    // Create add block button
-    this.addBlockButton = this.createAddBlockButton();
-
-    // Create mode switch button
-    this.modeSwitchButton = this.createModeSwitchButton();
-
     this.init();
   }
 
@@ -74,105 +68,87 @@ export class BlockEditor {
    * Initialize the editor
    */
   private init(): void {
-    // Set up editor element
     this.editorElement.className = 'block-editor';
     this.editorElement.innerHTML = '';
 
-    // Add the "Add Block" button and mode switch button at the top
     const container = this.editorElement.parentElement;
     if (container) {
-      // Create toolbar for buttons
-      const toolbar = document.createElement('div');
-      toolbar.className = 'editor-toolbar';
-      toolbar.appendChild(this.addBlockButton);
-      toolbar.appendChild(this.modeSwitchButton);
-      container.insertBefore(toolbar, this.editorElement);
+      // stats bar
+      this.statsBarElement = this.createStatsBar();
+      container.insertBefore(this.statsBarElement, this.editorElement);
 
-      // Create HTML editor container
+      // HTML editor container (hidden by default)
       this.htmlEditorContainer = document.createElement('div');
       this.htmlEditorContainer.className = 'html-editor-container';
       this.htmlEditorContainer.style.display = 'none';
       container.insertBefore(this.htmlEditorContainer, this.editorElement.nextSibling);
 
-      // Initialize AI panel if enabled
+      // Floating AI dialog (no sidebar)
       if (this.config.ai?.enabled) {
-        // Create layout wrapper for editor + AI sidebar
-        const wrapper = document.createElement('div');
-        wrapper.className = 'editor-with-ai-layout';
-
-        const mainArea = document.createElement('div');
-        mainArea.className = 'editor-main-area';
-
-        const aiSidebar = document.createElement('div');
-        aiSidebar.className = 'editor-ai-sidebar';
-
-        // Move existing editor into main area
-        const editorParent = this.editorElement.parentElement!;
-        editorParent.insertBefore(wrapper, this.editorElement);
-        wrapper.appendChild(mainArea);
-        wrapper.appendChild(aiSidebar);
-        mainArea.appendChild(this.editorElement);
-
-        // Also move HTML editor container into main area
-        if (this.htmlEditorContainer) {
-          mainArea.appendChild(this.htmlEditorContainer);
-        }
-
-        // Create AI panel
-        this.aiPanel = new AIAssistantPanel(this, this.config.ai);
-        aiSidebar.appendChild(this.aiPanel.getElement());
+        this.aiDialog = new AIFloatingDialog(this, this.config.ai);
+        this.textToolbar.setAICallback(() => {
+          this.aiDialog?.show();
+        });
       }
     }
 
-    // Load initial content or create empty paragraph
     if (this.textareaElement.value) {
       this.loadFromHTML(this.textareaElement.value);
     } else {
       this.addBlock('paragraph');
     }
 
-    // Set up event listeners
     this.setupEventListeners();
-
-    // Set placeholder
-    if (this.config.placeholder && this.blocks.length === 0) {
-      this.addBlock('paragraph');
-    }
   }
 
   /**
-   * Create the "Add Block" button
+   * Create the stats bar
    */
-  private createAddBlockButton(): HTMLElement {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'add-block-btn';
-    button.innerHTML = '<span class="btn-icon">+</span> Add Block';
+  private createStatsBar(): HTMLElement {
+    const bar = document.createElement('div');
+    bar.className = 'editor-stats-bar';
 
-    button.addEventListener('click', (e) => {
+    const aiBtn = this.config.ai?.enabled
+      ? `<button type="button" class="editor-bar-btn editor-ai-btn" title="Open AI Assistant">✦ Ask AI</button>`
+      : '';
+
+    bar.innerHTML = `
+      <div class="editor-stats">
+        <span class="editor-word-count">0 words</span>
+        <span class="editor-stats-dot">·</span>
+        <span class="editor-char-count">0 chars</span>
+      </div>
+      <div class="editor-bar-actions">
+        ${aiBtn}
+        <button type="button" class="editor-bar-btn editor-html-btn" title="Toggle HTML mode">&lt;/&gt;</button>
+      </div>
+    `;
+
+    bar.querySelector('.editor-ai-btn')?.addEventListener('click', (e) => {
       e.stopPropagation();
-      const rect = button.getBoundingClientRect();
-      this.blockMenu.show(rect.left, rect.bottom + 5);
+      this.aiDialog?.show();
     });
 
-    return button;
-  }
-
-  /**
-   * Create the mode switch button
-   */
-  private createModeSwitchButton(): HTMLElement {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'mode-switch-btn';
-    button.innerHTML = '&lt;/&gt; HTML Mode';
-
-    button.addEventListener('click', (e) => {
+    bar.querySelector('.editor-html-btn')?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.toggleHTMLMode();
     });
 
-    return button;
+    return bar;
+  }
+
+  /**
+   * Update word/char count in the stats bar
+   */
+  private updateWordCount(): void {
+    if (!this.statsBarElement) return;
+    const text = this.toHTML().replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    const words = text ? text.split(' ').filter(w => w.length > 0).length : 0;
+    const chars = text.length;
+    const wc = this.statsBarElement.querySelector('.editor-word-count');
+    const cc = this.statsBarElement.querySelector('.editor-char-count');
+    if (wc) wc.textContent = `${words} words`;
+    if (cc) cc.textContent = `${chars} chars`;
   }
 
   /**
@@ -312,9 +288,8 @@ export class BlockEditor {
     this.htmlEditorContainer.style.display = 'block';
     this.htmlEditor.show();
 
-    // Update button
-    this.modeSwitchButton.innerHTML = '👁️ Visual Mode';
-    this.modeSwitchButton.classList.add('active');
+    const htmlBtn = this.statsBarElement?.querySelector('.editor-html-btn');
+    if (htmlBtn) htmlBtn.textContent = 'Visual';
 
     this.isHTMLMode = true;
   }
@@ -340,9 +315,8 @@ export class BlockEditor {
     // Show visual editor
     this.editorElement.style.display = 'block';
 
-    // Update button
-    this.modeSwitchButton.innerHTML = '&lt;/&gt; HTML Mode';
-    this.modeSwitchButton.classList.remove('active');
+    const htmlBtn = this.statsBarElement?.querySelector('.editor-html-btn');
+    if (htmlBtn) htmlBtn.innerHTML = '&lt;/&gt;';
 
     this.isHTMLMode = false;
     this.updateTextarea();
@@ -376,8 +350,8 @@ export class BlockEditor {
     // Add to AI context event
     this.editorElement.addEventListener('addToAIContext', ((e: CustomEvent) => {
       const block = e.detail.block as BaseBlock;
-      if (this.aiPanel) {
-        this.aiPanel.addBlockToContext(block);
+      if (this.aiDialog) {
+        this.aiDialog.addBlockToContext(block);
       }
     }) as EventListener);
 
@@ -599,6 +573,7 @@ export class BlockEditor {
   private updateTextarea(): void {
     const html = this.toHTML();
     this.textareaElement.value = html;
+    this.updateWordCount();
   }
 
   /**

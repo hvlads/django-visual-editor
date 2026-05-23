@@ -9,6 +9,7 @@ export class TextToolbar {
   private currentBlock: BaseBlock | null = null;
   private savedSelection: Range | null = null;
   private linkDialogOpen: boolean = false;
+  private aiCallback: (() => void) | null = null;
 
   constructor() {
     this.element = this.createToolbar();
@@ -78,6 +79,15 @@ export class TextToolbar {
         </select>
       </div>
 
+      <div class="toolbar-divider"></div>
+
+      <!-- Ask AI -->
+      <div class="toolbar-group">
+        <button type="button" class="toolbar-btn toolbar-btn-ai" data-action="ai" title="Ask AI">
+          ✦ Ask AI
+        </button>
+      </div>
+
       <!-- Link Dialog -->
       <div class="link-dialog" style="display: none;">
         <input type="url" class="link-input" placeholder="Enter URL...">
@@ -105,6 +115,14 @@ export class TextToolbar {
         const format = (e.currentTarget as HTMLElement).dataset.format;
         if (format) this.applyFormat(format);
       });
+    });
+
+    // AI button
+    const aiBtn = this.element.querySelector('[data-action="ai"]');
+    aiBtn?.addEventListener('mousedown', (e) => e.preventDefault());
+    aiBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (this.aiCallback) this.aiCallback();
     });
 
     // Link button
@@ -365,6 +383,15 @@ export class TextToolbar {
     }
 
     this.currentBlock?.triggerChange();
+  }
+
+  /**
+   * Register a callback to open the AI dialog
+   */
+  setAICallback(callback: () => void): void {
+    this.aiCallback = callback;
+    const aiBtn = this.element.querySelector('[data-action="ai"]') as HTMLElement;
+    if (aiBtn) aiBtn.style.display = 'inline-flex';
   }
 
   /**
