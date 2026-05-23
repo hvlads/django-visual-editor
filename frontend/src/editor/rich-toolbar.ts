@@ -83,7 +83,7 @@ export class RichToolbar {
 
       <div class="rt-right">
         <button type="button" class="rt-btn-undo-ai" data-action="undo-ai" style="display:none" title="Откатить AI-правку">
-          ↩ Откатить
+          Откатить
         </button>
         <button type="button" class="rt-btn-ai" data-action="ai" style="display:none" title="Ask AI (⌘E)">
           ✦ Ask AI
@@ -217,7 +217,7 @@ export class RichToolbar {
     if (!btn) return;
     if (count > 0) {
       btn.style.display = 'inline-flex';
-      btn.textContent = count > 1 ? `↩ Откатить (${count})` : '↩ Откатить';
+      btn.textContent = count > 1 ? `Откатить (${count})` : 'Откатить';
     } else {
       btn.style.display = 'none';
     }
