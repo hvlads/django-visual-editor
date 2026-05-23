@@ -519,9 +519,30 @@
 }
 
 /* Responsive adjustments */
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
   .editor-ai-sidebar {
-    width: 320px;
+    width: 300px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .editor-with-ai-layout {
+    flex-direction: column;
+  }
+
+  .editor-ai-sidebar {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid #e5e7eb;
+    max-height: 480px;
+  }
+
+  .editor-ai-sidebar.collapsed {
+    max-height: 50px;
+  }
+
+  .ai-panel-body {
+    max-height: 400px;
   }
 }
 

@@ -834,7 +834,7 @@
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  min-width: 600px;
+  min-width: 0;
 }
 
 /* Make add block button full width */
