@@ -28,7 +28,7 @@ SECRET_KEY = "django-insecure-example-key-change-in-production"
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['192.168.1.102', 'localhost', '127.0.0.1']
 
 # Application definition
 INSTALLED_APPS = [
@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_visual_editor",
     "blog",
+    "django_extensions",
 ]
 
 MIDDLEWARE = [
@@ -106,6 +107,10 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://carmelina-exemplary-antony.ngrok-free.dev',
+]
+
 # Media files
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
@@ -127,7 +132,7 @@ LOGOUT_REDIRECT_URL = "/"
 
 VISUAL_EDITOR_AI_CONFIG = {
     "enabled": True,
-    "default_model": "yandex-gpt",  # ID from models list below
+    "default_model": "llama-4-scout",  # ID from models list below
     # Available models with their configurations
     "models": [
         {
@@ -164,6 +169,42 @@ VISUAL_EDITOR_AI_CONFIG = {
             "model": "gpt-3.5-turbo",
             "api_key": os.environ.get("OPENAI_API_KEY"),
             "base_url": None,
+            "project": None,
+        },
+        {
+            "id": "llama-4-scout",
+            "name": "Llama 4 Scout (free)",
+            "provider": "OpenRouter",
+            "model": "meta-llama/llama-4-scout:free",
+            "api_key": os.environ.get("OPENROUTER_API_KEY"),
+            "base_url": "https://openrouter.ai/api/v1",
+            "project": None,
+        },
+        {
+            "id": "gemma-3-27b",
+            "name": "Gemma 3 27B (free)",
+            "provider": "OpenRouter",
+            "model": "google/gemma-3-27b-it:free",
+            "api_key": os.environ.get("OPENROUTER_API_KEY"),
+            "base_url": "https://openrouter.ai/api/v1",
+            "project": None,
+        },
+        {
+            "id": "mistral-small",
+            "name": "Mistral Small 3.1 (free)",
+            "provider": "OpenRouter",
+            "model": "mistralai/mistral-small-3.1-24b-instruct:free",
+            "api_key": os.environ.get("OPENROUTER_API_KEY"),
+            "base_url": "https://openrouter.ai/api/v1",
+            "project": None,
+        },
+        {
+            "id": "llama-3-70b",
+            "name": "Llama 3.3 70B (Groq)",
+            "provider": "Groq",
+            "model": "llama-3.3-70b-versatile",
+            "api_key": os.environ.get("GROQ_API_KEY"),
+            "base_url": "https://api.groq.com/openai/v1",
             "project": None,
         },
     ],
