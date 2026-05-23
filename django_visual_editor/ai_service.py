@@ -6,6 +6,7 @@ Uses OpenAI library for AI provider access.
 from typing import Dict, List, Optional, Any
 from django.conf import settings
 import logging
+import re
 
 try:
     import openai
@@ -46,19 +47,13 @@ Rules:
 6. DO NOT wrap output in markdown code blocks - return raw HTML only
 
 Output format: Raw HTML without any markdown formatting or code fences.""",
-        "edit": """You are an expert editor improving article content.
-
-Task: Edit and improve the provided content based on user's instructions.
+        "edit": """You are an expert editor. The user will provide an instruction and the content to edit.
 
 Rules:
-1. Maintain the HTML structure (<h2>, <h3>, <p>, <ul>, <ol>, <blockquote>, etc.)
-2. Improve clarity, grammar, flow, and engagement
-3. Follow the user's specific editing instructions carefully
-4. Preserve the original meaning unless explicitly asked to change it
-5. Return ONLY the edited HTML without any explanations
-6. DO NOT wrap output in markdown code blocks - return raw HTML only
-
-The context blocks below show the content to edit. Apply the requested changes and return the improved version.""",
+1. Apply the user's instruction to the provided content — always make changes
+2. Maintain HTML structure (<h2>, <h3>, <p>, <ul>, <ol>, <blockquote>, etc.)
+3. Return ONLY the edited HTML, no explanations, no markdown code fences
+4. Never return the content unchanged — always apply the requested edit""",
     }
 
     def __init__(self):
@@ -217,20 +212,20 @@ The context blocks below show the content to edit. Apply the requested changes a
                 f"\n\nAdditional instructions:\n{additional_instructions.strip()}"
             )
 
-        # Add context blocks if provided
-        if context_blocks:
-            context_text = "\n\n".join(
-                [
-                    f"<context-block>\n{block}\n</context-block>"
-                    for block in context_blocks
-                ]
-            )
-            system_prompt += f"\n\nContext blocks from the article:\n{context_text}"
+        # Build user message — put content to edit directly in user turn
+        if context_blocks and mode == "edit":
+            context_text = "\n\n".join(context_blocks)
+            user_content = f"{prompt}\n\nContent to edit:\n{context_text}"
+        elif context_blocks:
+            context_text = "\n\n".join(context_blocks)
+            user_content = f"{prompt}\n\nReference content:\n{context_text}"
+        else:
+            user_content = prompt
 
         # Build messages array
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": prompt},
+            {"role": "user", "content": user_content},
         ]
 
         return messages
@@ -258,7 +253,15 @@ The context blocks below show the content to edit. Apply the requested changes a
             if content.endswith("```"):
                 content = content[:-3]  # Remove closing ```
 
-        return content.strip()
+        content = content.strip()
+
+        # Strip inline style and class attributes so editor CSS applies uniformly
+        content = re.sub(r'\s*style="[^"]*"', '', content)
+        content = re.sub(r"\s*style='[^']*'", '', content)
+        content = re.sub(r'\s*class="[^"]*"', '', content)
+        content = re.sub(r"\s*class='[^']*'", '', content)
+
+        return content
 
     def get_available_models(self) -> List[Dict[str, str]]:
         """
