@@ -9,6 +9,7 @@ export class RichToolbar {
   private onFullscreen: (() => void) | null = null;
   private onDictate: (() => void) | null = null;
   private onUndoAI: (() => void) | null = null;
+  private onImageUpload: ((file: File) => void) | null = null;
 
   constructor(editorDiv: HTMLElement) {
     this.editorDiv = editorDiv;
@@ -78,6 +79,12 @@ export class RichToolbar {
         <button type="button" class="rt-btn" data-cmd="redo" title="Redo (⌘⇧Z)">
           <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M11.5 7A4.5 4.5 0 1 0 7 11.5H9.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11.5 4.5v3h-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
+
+        <div class="rt-sep-line rt-image-sep" style="display:none"></div>
+        <button type="button" class="rt-btn rt-btn-image" data-action="image" style="display:none" title="Insert image">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="2.5" width="13" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4"/><circle cx="4.5" cy="5.5" r="1" fill="currentColor"/><path d="M1 10.5l3.5-3.5 2.5 2.5 2-2 3.5 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <input type="file" class="rt-image-input" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" tabindex="-1">
 
       </div>
 
@@ -185,6 +192,18 @@ export class RichToolbar {
     this.element.querySelector('[data-action="undo-ai"]')?.addEventListener('click', () => {
       this.onUndoAI?.();
     });
+
+    // Image upload
+    const imageBtn = this.element.querySelector('[data-action="image"]') as HTMLElement;
+    const imageInput = this.element.querySelector('.rt-image-input') as HTMLInputElement;
+    imageBtn?.addEventListener('click', () => imageInput?.click());
+    imageInput?.addEventListener('change', () => {
+      const file = imageInput.files?.[0];
+      if (file && this.onImageUpload) {
+        this.onImageUpload(file);
+        imageInput.value = '';
+      }
+    });
   }
 
   getElement(): HTMLElement {
@@ -257,6 +276,14 @@ export class RichToolbar {
     const c = this.element.querySelector('.rt-chars');
     if (w) w.textContent = `${words} words`;
     if (c) c.textContent = `${chars} chars`;
+  }
+
+  setImageCallback(fn: (file: File) => void): void {
+    this.onImageUpload = fn;
+    const btn = this.element.querySelector('.rt-btn-image') as HTMLElement;
+    const sep = this.element.querySelector('.rt-image-sep') as HTMLElement;
+    if (btn) btn.style.display = 'inline-flex';
+    if (sep) sep.style.display = '';
   }
 
   updateButtonStates(): void {

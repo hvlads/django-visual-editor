@@ -110,6 +110,26 @@
   color: #2563eb !important;
 }
 
+.rich-editor-content img {
+  max-width: 100% !important;
+  height: auto !important;
+  display: inline-block !important;
+}
+
+.rich-editor-content figure.editor-figure {
+  margin: 1.4em 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: none !important;
+  /* default center — overridden by modifier classes below */
+  text-align: center;
+}
+
+/* Alignment modifiers — must beat Django admin's generic figure styles */
+.rich-editor-content figure.editor-figure--left  { text-align: left !important; }
+.rich-editor-content figure.editor-figure--right { text-align: right !important; }
+.rich-editor-content figure.editor-figure--center { text-align: center !important; }
+
 .rich-editor-content {
   font-size: 18px !important;
   line-height: 1.85 !important;
