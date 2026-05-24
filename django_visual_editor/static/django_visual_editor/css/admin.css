@@ -76,15 +76,45 @@
 .rich-editor-content h6 {
   background: none !important;
   background-color: transparent !important;
+  color: #111110 !important;
   padding: 0 !important;
   border: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  text-transform: none !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+  letter-spacing: -0.02em !important;
+  font-family: 'Charter', 'Georgia', 'Cambria', 'Times New Roman', serif !important;
 }
 
-.rich-editor-content p {
+.rich-editor-content h1 { font-size: 2.1rem !important; }
+.rich-editor-content h2 { font-size: 1.55rem !important; }
+.rich-editor-content h3 { font-size: 1.25rem !important; }
+.rich-editor-content h4 { font-size: 1.05rem !important; }
+.rich-editor-content h5 { font-size: 1rem !important; }
+.rich-editor-content h6 { font-size: 0.9rem !important; color: #666 !important; }
+
+.rich-editor-content p,
+.rich-editor-content li {
   background: none !important;
   background-color: transparent !important;
   border: none !important;
-  padding: 0 !important;
+  font-size: 18px !important;
+  line-height: 1.8 !important;
+  color: #1a1a18 !important;
+  font-family: 'Charter', 'Georgia', 'Cambria', 'Times New Roman', serif !important;
+}
+
+.rich-editor-content a {
+  color: #2563eb !important;
+}
+
+.rich-editor-content {
+  font-size: 18px !important;
+  line-height: 1.85 !important;
+  color: #1a1a18 !important;
+  font-family: 'Charter', 'Georgia', 'Cambria', 'Times New Roman', serif !important;
 }
 
 /* Selection menu and AI panel above Django modals */
