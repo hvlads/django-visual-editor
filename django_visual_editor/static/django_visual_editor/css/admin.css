@@ -113,7 +113,7 @@
 .rich-editor-content img {
   max-width: 100% !important;
   height: auto !important;
-  display: block !important;
+  display: inline-block !important;
 }
 
 .rich-editor-content figure.editor-figure {
@@ -121,8 +121,14 @@
   padding: 0 !important;
   border: none !important;
   background: none !important;
-  text-align: center !important;
+  /* default center — overridden by modifier classes below */
+  text-align: center;
 }
+
+/* Alignment modifiers — must beat Django admin's generic figure styles */
+.rich-editor-content figure.editor-figure--left  { text-align: left !important; }
+.rich-editor-content figure.editor-figure--right { text-align: right !important; }
+.rich-editor-content figure.editor-figure--center { text-align: center !important; }
 
 .rich-editor-content {
   font-size: 18px !important;
