@@ -1,5 +1,11 @@
 # Django Visual Editor
 
+[![PyPI version](https://img.shields.io/pypi/v/django-visual-editor.svg?color=blue)](https://pypi.org/project/django-visual-editor/)
+[![PyPI downloads](https://img.shields.io/pypi/dm/django-visual-editor.svg?color=green)](https://pypi.org/project/django-visual-editor/)
+[![Python versions](https://img.shields.io/pypi/pyversions/django-visual-editor.svg)](https://pypi.org/project/django-visual-editor/)
+[![Django versions](https://img.shields.io/badge/django-4.2%20%7C%205.x-092E20.svg?logo=django&logoColor=white)](https://pypi.org/project/django-visual-editor/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A rich text editor for Django with a clean document-style interface, AI assistant, and mobile support.
 
 ## Features
