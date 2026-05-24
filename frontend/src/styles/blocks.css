@@ -469,6 +469,23 @@
 .rich-editor-content u { text-decoration: underline; text-underline-offset: 2px; }
 .rich-editor-content s { text-decoration: line-through; }
 
+/* ==== Images ==== */
+.rich-editor-content img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 6px;
+}
+
+.rich-editor-content figure.editor-figure {
+  margin: 1.4em 0;
+  text-align: center;
+}
+
+.rich-editor-content figure.editor-figure img {
+  margin: 0 auto;
+}
+
 /* ==== AI content highlight ==== */
 @keyframes ai-highlight-fade {
   0%   { background-color: rgba(34, 197, 94, 0.13); box-shadow: inset 3px 0 0 rgba(34, 197, 94, 0.65); }

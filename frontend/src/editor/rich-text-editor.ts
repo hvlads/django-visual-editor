@@ -3,6 +3,7 @@ import { RichToolbar } from './rich-toolbar';
 import { SelectionMenu } from './selection-menu';
 import { AIConfig } from './ai-assistant-panel';
 import { AIFloatingDialog } from './ai-floating-dialog';
+import { ImageUploader } from '../utils/image-uploader';
 
 /**
  * Rich Text Editor v2 — single contenteditable document editor.
@@ -94,6 +95,29 @@ export class RichTextEditor {
           this.lastSelectionRange = null;
         } else {
           this.aiDialog?.show();
+        }
+      });
+    }
+
+    // Image upload
+    if (this.config.uploadUrl) {
+      const uploader = new ImageUploader(this.config.uploadUrl);
+      this.toolbar.setImageCallback(async (file: File) => {
+        const validation = ImageUploader.validateFile(file);
+        if (!validation.valid) {
+          alert(validation.error);
+          return;
+        }
+        const result = await uploader.upload(file);
+        if (result.success && result.url) {
+          this.editorDiv.focus();
+          document.execCommand('insertHTML', false,
+            `<figure class="editor-figure"><img src="${result.url}" alt=""></figure>`
+          );
+          this.updateTextarea();
+          this.updateStats();
+        } else {
+          alert(result.error || 'Upload failed');
         }
       });
     }
