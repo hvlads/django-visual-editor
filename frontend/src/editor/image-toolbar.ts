@@ -93,6 +93,10 @@ export class ImageToolbar {
 
   private setAlignment(align: string): void {
     if (!this.currentFigure) return;
+    // Use inline style so alignment renders correctly on public pages too,
+    // not just in admin where admin.css loads the modifier classes.
+    this.currentFigure.style.textAlign = align;
+    // Keep class only for toolbar active-state tracking
     ['left', 'center', 'right'].forEach(a =>
       this.currentFigure!.classList.remove(`editor-figure--${a}`)
     );
@@ -120,13 +124,10 @@ export class ImageToolbar {
   }
 
   private updateActiveStates(): void {
+    const currentAlign = this.currentFigure?.style.textAlign || 'center';
     ['left', 'center', 'right'].forEach(align => {
       const btn = this.element.querySelector(`[data-align="${align}"]`);
-      const isActive = align === 'center'
-        ? !this.currentFigure?.classList.contains('editor-figure--left') &&
-          !this.currentFigure?.classList.contains('editor-figure--right')
-        : this.currentFigure?.classList.contains(`editor-figure--${align}`);
-      btn?.classList.toggle('active', !!isActive);
+      btn?.classList.toggle('active', currentAlign === align);
     });
 
     const currentWidth = this.currentImage?.style.width?.replace('%', '') || '100';

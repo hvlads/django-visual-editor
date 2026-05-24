@@ -120,7 +120,7 @@ export class RichTextEditor {
         if (result.success && result.url) {
           this.editorDiv.focus();
           document.execCommand('insertHTML', false,
-            `<figure class="editor-figure"><img src="${result.url}" alt=""></figure>`
+            `<figure class="editor-figure editor-figure--center" style="text-align:center"><img src="${result.url}" alt=""></figure>`
           );
           this.updateTextarea();
           this.updateStats();
