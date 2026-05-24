@@ -12,7 +12,7 @@ class VisualEditorWidget(forms.Textarea):
     template_name = "django_visual_editor/widget.html"
 
     class Media:
-        css = {"all": ("django_visual_editor/css/editor.css",)}
+        css = {"all": ("django_visual_editor/css/admin.css",)}
         js = ("django_visual_editor/js/editor.bundle.js",)
 
     def __init__(self, attrs=None, config=None):

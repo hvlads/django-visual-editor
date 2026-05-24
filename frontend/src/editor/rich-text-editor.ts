@@ -198,9 +198,14 @@ export class RichTextEditor {
   }
 
   private updateTextarea(): void {
-    this.textareaElement.value = this.isHTMLMode
-      ? this.editorDiv.innerText
-      : this.editorDiv.innerHTML;
+    if (this.isHTMLMode) {
+      this.textareaElement.value = this.editorDiv.innerText;
+      return;
+    }
+    // Clone to strip transient ai-highlight class before saving
+    const clone = this.editorDiv.cloneNode(true) as HTMLElement;
+    clone.querySelectorAll('.ai-highlight').forEach(el => el.classList.remove('ai-highlight'));
+    this.textareaElement.value = clone.innerHTML;
   }
 
   private updateStats(): void {
@@ -244,7 +249,8 @@ export class RichTextEditor {
   insertAIContent(html: string): void {
     this.takeSnapshot();
     this.editorDiv.focus();
-    document.execCommand('insertHTML', false, html);
+    document.execCommand('insertHTML', false, `<div class="ai-highlight">${html}</div>`);
+    this.scheduleHighlightRemoval();
     this.updateTextarea();
     this.updateStats();
   }
@@ -255,9 +261,17 @@ export class RichTextEditor {
     if (!sel) return;
     sel.removeAllRanges();
     sel.addRange(range);
-    document.execCommand('insertHTML', false, html);
+    document.execCommand('insertHTML', false, `<div class="ai-highlight">${html}</div>`);
+    this.scheduleHighlightRemoval();
     this.updateTextarea();
     this.updateStats();
+  }
+
+  private scheduleHighlightRemoval(): void {
+    setTimeout(() => {
+      this.editorDiv.querySelectorAll('.ai-highlight').forEach(el => el.classList.remove('ai-highlight'));
+      this.updateTextarea();
+    }, 4200); // slightly after animation ends (4s)
   }
 
   private toggleHTMLMode(): void {

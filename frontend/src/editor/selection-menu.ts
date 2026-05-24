@@ -31,9 +31,9 @@ export class SelectionMenu {
     el.querySelector('[data-action="ai-edit"]')?.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      const cb = this.savedCallback; // save before hide() clears it
       this.hide();
-      // Call the saved callback (range already captured at show() time)
-      if (this.savedCallback) this.savedCallback();
+      if (cb) cb();
     });
 
     return el;
