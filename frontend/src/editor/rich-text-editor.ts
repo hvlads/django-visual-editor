@@ -4,6 +4,7 @@ import { SelectionMenu } from './selection-menu';
 import { AIConfig } from './ai-assistant-panel';
 import { AIFloatingDialog } from './ai-floating-dialog';
 import { ImageUploader } from '../utils/image-uploader';
+import { ImageToolbar } from './image-toolbar';
 
 /**
  * Rich Text Editor v2 — single contenteditable document editor.
@@ -16,6 +17,7 @@ export class RichTextEditor {
   private selectionMenu: SelectionMenu;
   private config: EditorConfig;
   private aiDialog: AIFloatingDialog | null = null;
+  private imageToolbar: ImageToolbar | null = null;
   private isHTMLMode: boolean = false;
   private lastSelectionRange: Range | null = null;
   private editorBody: HTMLElement;
@@ -99,6 +101,12 @@ export class RichTextEditor {
       });
     }
 
+    // Image toolbar (click on image to resize/align)
+    this.imageToolbar = new ImageToolbar(() => {
+      this.updateTextarea();
+      this.updateStats();
+    });
+
     // Image upload
     if (this.config.uploadUrl) {
       const uploader = new ImageUploader(this.config.uploadUrl);
@@ -148,7 +156,14 @@ export class RichTextEditor {
 
     // Update toolbar button states on cursor move
     this.editorDiv.addEventListener('keyup', () => this.toolbar.updateButtonStates());
-    this.editorDiv.addEventListener('click', () => this.toolbar.updateButtonStates());
+    this.editorDiv.addEventListener('click', (e) => {
+      this.toolbar.updateButtonStates();
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'IMG' && this.imageToolbar) {
+        e.preventDefault();
+        this.imageToolbar.attachToImage(target as HTMLImageElement);
+      }
+    });
 
     // Save selection on every change (needed on iOS where tap clears selection before click)
     document.addEventListener('selectionchange', () => {
